@@ -476,6 +476,8 @@ seed=73;const CREO=[],SAGU=[],YUCC=[],MESQ=[],JUNI=[];for(const p of PLANT.creos
 plant(creosoteGeo,[71,72,73],CREO,shade(.92,1.08),.05,p=>.9+p.s*.5,false);
 plant(ocotilloGeo,[81,82],PLANT.ocotillo.map(p=>({...p,t:rnd()})),shade(.95,1.05),.02,p=>.85+p.s*.35);
 for(let i=0;i<900;i++){const x=600+rnd()*780,z=(rnd()-.5)*(ZW*2-60);if(cleared(x,z)||Math.abs(z-TRAILZ(x))<8||seaK(x,z)>0)continue;const rd=riverD(x,z);if(rd.r&&rd.d<rd.r.w+12)continue;if(rnd()<.55)SAGU.push({x,z,r:rnd()*6.28,s:rnd(),t:rnd(),tx:(rnd()-.5)*.06,tz:(rnd()-.5)*.06})}
+// keep the trees and the taller plants back from Chihuahua City's outskirts, where its houses and roads run out past the cleared ring
+for(const L of [YUCC,MESQ,JUNI])for(let i=L.length-1;i>=0;i--)if(Math.hypot(L[i].x-P.CHI.x,L[i].z-P.CHI.z)<92)L.splice(i,1);
 plant(saguaroGeo,[91,92,93,94],SAGU,shade(.92,1.04),0,p=>.85+p.s*.4);
 plant(yuccaGeo,[101,102,103],YUCC,shade(.92,1.06),.03,p=>.9+p.s*.4);
 plant(mesquiteGeo,[111,112],MESQ,shade(.9,1.05),.035,p=>.8+p.s*.45);
@@ -3380,7 +3382,7 @@ function chihuahua(){const T=PROPS.chi;if(!T)return;const c=P.CHI,G=new THREE.Gr
   for(const [sx,sz] of [[-22,-6],[-22,8],[22,-6],[22,6],[-10,22],[12,22]]){K.sack(c.x+sx+rn(2.6,3.4),c.z+sz+rn(-1,1));K.crate(c.x+sx-rn(2.8,3.4),c.z+sz+rn(-1,1));if(R()<.5)K.barrel(c.x+sx+rn(-1,1),c.z+sz+rn(1.6,2.2),.8)}
   for(const a of [0,1.57,3.14,4.71])K.bench(c.x+Math.sin(a)*7.5,c.z-18+Math.cos(a)*7.5,a);
   for(let k=0;k<14;k++){if(k===3)continue;const a=k/14*6.283,a2=(k+1)/14*6.283;const x0=c.x+42+Math.cos(a)*10,z0=c.z+15+Math.sin(a)*8,x1=c.x+42+Math.cos(a2)*10,z1=c.z+15+Math.sin(a2)*8;for(const yy of [1,2.2])K.put(new THREE.BoxGeometry(Math.hypot(x1-x0,z1-z0),.14,.14),WOOD,(x0+x1)/2,(groundH(x0,z0)+groundH(x1,z1))/2+yy,(z0+z1)/2,-Math.atan2(z1-z0,x1-x0))}
-  K.finish(G);for(const [sx,sz] of [[-14,-26],[15,-27],[-16,12],[17,13]])tree(G,c.x+sx,c.z+sz,.62,0x5a6a3a);
+  K.finish(G);
   const L=[];for(const h of HS){const [dx,dz]=doorAt(h),[nx,nz]=DOORN[h.door];L.push({x:dx+nx*.5-nz*2.2,z:dz+nz*.5+nx*2.2})}
   for(const [sx,sz] of [[-12,-30],[12,-30],[-28,-4],[28,-4],[-12,20],[12,20],[0,34]])L.push({x:c.x+sx,z:c.z+sz,y:4.4,post:true});L.push({x:c.x-7,z:c.z-50,post:true},{x:c.x+7,z:c.z-50,post:true});lamps(G,L)}
 
