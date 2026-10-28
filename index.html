@@ -53,7 +53,7 @@ button:focus-visible{outline:1px solid var(--ember);outline-offset:2px}
 #book .t p{font:400 13px/1.45 var(--pix);color:#e2dacb;margin:0 0 8px}
 #book .opts{display:flex;flex-direction:column;gap:5px;margin-top:4px}
 #book .opts button{text-align:left;background:none;border:1px solid rgba(236,228,204,.18);color:var(--ink);font:400 13px/1.3 var(--pix);padding:7px 10px;cursor:pointer}
-#book .opts button:hover{border-color:var(--ember)}#book .opts button i{font-style:normal;color:var(--ember);margin-right:6px}#book .opts button i.pg{margin-right:8px}#book .opts button i.pg .pb{color:#141210;margin-right:0}#book .opts button i:empty{display:none}#book .opts button{display:flex;align-items:center}
+#book .opts button:hover{border-color:var(--ember)}#book .opts button i{font-style:normal;color:var(--ember);margin-right:6px}#book .opts button i.pg{margin-right:8px}#book .opts button i.pg .pb{color:#141210;margin-right:0}#book .opts button i:empty{display:none}i.fxg{font-style:normal;margin-right:7px;display:inline-block;vertical-align:-1px}i.fxg .pb{margin-right:0}#book .opts button i.pgb{display:inline-block;width:28px;margin-right:8px}#book .opts button:focus{border-color:var(--ember);outline:none}#book .opts button{display:flex;align-items:center}
 #book .page{display:flex;flex-direction:column;gap:4px}
 #book .page canvas{width:140px;height:191px;image-rendering:pixelated;background:#e7dcc6}
 #book .page small{font:400 10px var(--mono);color:var(--ink-dim);letter-spacing:.06em}
@@ -967,7 +967,11 @@ const bWho=document.getElementById('bWho'),bText=document.getElementById('bText'
 // the choices carry the pad's face buttons: the one in focus takes cross, the rest circle, square, triangle in order
 const PADK=['A','B','X','Y'];
 function glyphOpts(){const L=[...bOpts.querySelectorAll('button')];if(!L.length)return;let f=L.indexOf(document.activeElement);if(f<0)f=0;const order=[L[f],...L.filter((_,i)=>i!==f)];
-  L.forEach(b=>b._pad=null);order.forEach((b,j)=>{b._pad=PADK[j]||null;const i=b.querySelector('i');i.className='';i.innerHTML=PADMODE?(b._pad?GLYPH[b._pad]:''):b.dataset.n;if(PADMODE&&b._pad)i.className='pg';});}
+  // on a controller only the highlighted answer carries a button, and it is always ✕; the d-pad moves the highlight
+  L.forEach(b=>{b._pad=b===L[f]?'A':null;const i=b.querySelector('i');i.className='';if(!PADMODE){i.innerHTML=b.dataset.n;return}if(b._pad){i.innerHTML=GLYPH.A;i.className='pg'}else{i.innerHTML='&#8203;';i.className='pgb'}});}
+// menus on a controller: no button marks beside the choices until one is highlighted, then that one shows ✕
+document.addEventListener('focusin',e=>{const b=e.target;document.querySelectorAll('i.fxg').forEach(x=>{if(!b||!b.contains||!b.contains(x))x.remove()});
+  if(!PADMODE||!(b instanceof HTMLButtonElement)||b.closest('#book')||!b.closest('#titleCard,.pm,#about,#fbag'))return;if(b.querySelector('i.fxg'))return;const g=document.createElement('i');g.className='fxg';g.innerHTML=GLYPH.A;b.prepend(g)});
 function openBook(who,pp,html,opts,page){bWho.textContent=who;bText.innerHTML=html.startsWith('<')?html:`<p>${html}</p>`;bOpts.innerHTML='';opts.forEach(([l,fn],i)=>{const b=document.createElement('button');b.innerHTML=`<i class="on">${i+1}</i><span>${l}</span>`;b.dataset.n=i+1;b.onclick=()=>{au();fn()};b.addEventListener('focus',glyphOpts);bOpts.appendChild(b)});glyphOpts();
   pageEl.hidden=!page;bookEl.classList.toggle('nar',!pp);bookEl.style.gridTemplateColumns=pp?(page?'':'96px 1fr'):'1fr';bookEl.hidden=false;if(pp){try{portrait(pp,faceCv)}catch(e){}}actEl.hidden=true;
   const b0=bOpts.querySelector('button');if(b0)b0.focus({preventScroll:true})}
@@ -2985,7 +2989,7 @@ const menuEl=document.createElement('div');menuEl.id='pause';menuEl.hidden=true;
 function ctlRows(){const G=k=>PADMODE?GLYPH[k]:'';const K=t=>PADMODE?'':`<kbd>${t}</kbd>`;
   if(FP.on)return fpadEl.innerHTML.replace(/<button[^>]*>/g,'<div class="cr">').replace(/<\/button>/g,'</div>')+`<div class="cr">${PADMODE?'<i class="pb pt">Left stick</i>':'<kbd>W A S D</kbd>'}<span>Ride or walk</span></div><div class="cr">${PADMODE?GLYPH.A:'<kbd>E</kbd>'}<span>What is at hand</span></div>`;
   const rows=[[PADMODE?'<i class="pb pt">Left stick</i>':'<kbd>W A S D</kbd>','Ride or walk'],[PADMODE?GLYPH.A:'<kbd>E</kbd>','Do what is at hand'],[PADMODE?GLYPH.LS:'<kbd>Shift</kbd>','Run, on foot'],[PADMODE?GLYPH.LB+GLYPH.RB:'<kbd>Q R</kbd>','Turn the view a quarter round'],
-    [PADMODE?GLYPH.VW:'<kbd>N</kbd>','The map'],[PADMODE?GLYPH.A+GLYPH.B+GLYPH.X+GLYPH.Y:'<kbd>1 2 3 4</kbd>','Choose, when someone speaks'],[PADMODE?'<i class="pb pt">Options</i>':'<kbd>Esc</kbd>','This menu']];
+    [PADMODE?GLYPH.VW:'<kbd>N</kbd>','The map'],[PADMODE?GLYPH.U+GLYPH.D+GLYPH.A:'<kbd>1 2 3 4</kbd>','Choose, when someone speaks'],[PADMODE?'<i class="pb pt">Options</i>':'<kbd>Esc</kbd>','This menu']];
   return rows.map(([a,b])=>`<div class="cr">${a}<span>${b}</span></div>`).join('')}
 function drawMenu(){const where=FP.on?'Free play':ACT&&ACT.title?(ACT.num?'Act '+ACT.num+' · ':'')+ACT.title:'';
   menuEl.innerHTML=`<div class="pm"><h2>Paused</h2><small>${where}</small><div class="pb2"><button data-a="resume">Go on</button>${FP.on?'<button data-a="ledger">The kid’s ledger</button>':''}<button data-a="main">Main menu</button></div>
@@ -4022,6 +4026,39 @@ function vox(m,key,vol=1,force){if(!m||!AU.c||!FP.on)return false;const now=perf
 // hit, and killed
 {const _h=hitMan;hitMan=function(m,dmg,mine){const live=m.state!=='dead';_h(m,dmg,mine);if(!live)return;if(m.hp>0)vox(m,'hurtv',.9,true)}}
 {const _k=killMan;killMan=function(m){const was=m.state;_k(m);if(was!=='dead'){m.voxT=0;vox(m,'deathv',1,true)}}}
+
+/* ---------- a tilt-shift focus, on trial: the ground at the kid's depth stays sharp and the picture softens nearer and farther
+   from it, so the country reads like a model on a table. The blur is taken in the low-resolution picture before it is scaled
+   up, so what goes soft turns to blocks of colour and the pixels stay crisp. It eases off with a gun drawn and goes
+   away under the spyglass, so riders far off are not lost in it. On or off from the pause menu (or the V key) ---------- */
+const FOCUS=(()=>{
+const KEY='meridian-focus-v1';let on=true;try{const v=localStorage.getItem(KEY);if(v!==null)on=v==='1'}catch(e){}
+let k=on?1:0;
+postU.uFoc={value:new THREE.Vector2(.5,.5)};postU.uDof={value:k};
+const M=post.material;
+const anchor='vec3 c=grade(texture2D(tColor,uv).rgb);';
+if(!M.fragmentShader.includes(anchor))throw new Error('focus: post shader changed');
+M.fragmentShader=M.fragmentShader.replace('uniform sampler2D tColor,tDepth;','uniform sampler2D tColor,tDepth;uniform vec2 uFoc;uniform float uDof;')
+ .replace(anchor,`vec3 c0=texture2D(tColor,uv).rgb;
+    if(uDof>.01){float dF=lin(uFoc);float dU=lin(uv);float dd=abs(dU-dF);
+      float coc=uPersp>.5?smoothstep(.12,.55,dd/max(dF,1.)):smoothstep(10.,70.,dd);float by=vUv.y-uFoc.y;coc=max(coc,smoothstep(.1,.42,by>0.?by:-by*1.25));
+      float r=coc*3.2*uDof;
+      if(r>.35){vec3 s=c0;float n=1.;for(int i=0;i<12;i++){float a=float(i)*2.39996;float rr=r*sqrt((float(i)+.5)/12.);vec2 o=vec2(cos(a),sin(a))*rr*px;s+=texture2D(tColor,uv+o).rgb;n+=1.;}c0=mix(c0,s/n,smoothstep(.35,1.,r));}}
+    vec3 c=grade(c0);`);
+M.needsUpdate=true;
+const v=new THREE.Vector3();
+function want(){if(!on||S.phase!=='play')return 0;if(window.__gear&&__gear.SPY&&__gear.SPY.on)return 0;if(typeof FP!=='undefined'&&FP.on&&FP.held&&typeof GUNS!=='undefined'&&GUNS[FP.held])return .45;return 1}
+HOOKS.push(dt=>{k+=(want()-k)*Math.min(1,dt*3);postU.uDof.value=k;
+  const K=S.kid;v.set(K.x,groundH(K.x,K.z)+1.2,K.z).project(VCAM);postU.uFoc.value.set(clamp((v.x+1)/2,.02,.98),clamp((v.y+1)/2,.02,.98))});
+function set(b){on=b;try{localStorage.setItem(KEY,on?'1':'0')}catch(e){}say(on?'Focus effect on.':'Focus effect off.',1800)}
+addEventListener('keydown',e=>{if(e.key==='v'||e.key==='V'){if(e.target&&/INPUT|TEXTAREA/.test(e.target.tagName))return;set(!on)}});
+// a button in the pause menu
+{const _d=drawMenu;drawMenu=function(){_d();const box=menuEl.querySelector('.pb2');if(!box||box.querySelector('[data-a="focus"]'))return;
+  const b=document.createElement('button');b.dataset.a='focus';b.textContent='Focus effect: '+(on?'on':'off');const main=box.querySelector('[data-a="main"]');box.insertBefore(b,main);
+  b.onclick=()=>{set(!on);drawMenu()};const B=[...box.querySelectorAll('button')];B.forEach((x,i)=>x.classList.toggle('sel',i===MENU.i))}}
+{const _m=menuDo;menuDo=function(a){if(a==='focus'){set(!on);drawMenu();return}return _m(a)}}
+window.__focus={get on(){return on},set,get k(){return k}};
+return{set}})();
 
 
 requestAnimationFrame(frame);
