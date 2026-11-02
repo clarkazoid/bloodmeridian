@@ -2267,7 +2267,8 @@ prop('tinaja',G=>{const c=P.TINAJA,y=gy(c.x,c.z);const w=new THREE.Mesh(new THRE
   for(const [dx,dz] of [[-12,-8],[10,-10],[-6,12]])tree(G,c.x+dx,c.z+dz,1.15,0x6a7a3a)});
 
 const TOWNS=[{id:'nac',name:'Nacogdoches',props:['nac'],c:{x:2975,z:0},r:70},{id:'bexar',name:'Béxar',props:['bexar'],c:{x:2850,z:150},r:50},
-  {id:'chi',name:'Chihuahua City',props:['chi'],c:{x:2330,z:-125},r:70},{id:'station',name:'the stage station',props:['station'],c:{x:2080,z:-34},r:45},{id:'sd',name:'San Diego',props:['sd'],c:{x:440,z:92},r:60}];
+  {id:'chi',name:'Chihuahua City',props:['chi'],c:{x:2330,z:-125},r:70},{id:'station',name:'the stage station',props:['station'],c:{x:2080,z:-34},r:45},{id:'sd',name:'San Diego',props:['sd'],c:{x:440,z:92},r:60},
+  {id:'fg',name:'Fort Griffin',props:['griffin'],c:{x:2600,z:-72},r:72,board:{x:2614,z:-46}}];
 const LANDMARKS=[{n:'the rock tanks at Hueco',p:()=>P.TANKS},{n:'the old fire mountain',p:()=>P.VOL},{n:'the well in the desert',p:()=>P.WELL},{n:'the ruined mission',p:()=>P.MISSION},
   {n:'the tinaja in the malpais',p:()=>P.TINAJA},{n:'the crossing of the Colorado',p:()=>P.HILL},{n:'the stage station',p:()=>P.STATION}];
 const townById=id=>TOWNS.find(t=>t.id===id);
@@ -2282,15 +2283,15 @@ BOARDG.visible=false;
 // the people of the towns: a storekeeper by each board, and a few who walk about
 const TF_O=()=>({coat:[0x7a4a30,0x5a6a7a,0x8a6a3a,0x4a4038,0xc8b8a0,0x6a3a3a][(Math.random()*6)|0],trou:[0x3a3028,0x2e2a26,0x5a5040][(Math.random()*3)|0],hat:['sombrero','wide','slouch',null][(Math.random()*4)|0],hatC:[0x9a7a4a,0x3a3026,0x6a5a3a][(Math.random()*3)|0],
   skin:[0xb88a62,0xd8a888,0xa87a58][(Math.random()*3)|0],beard:Math.random()<.4?0x2a2018:undefined,hair:[0x1a1410,0x3a2a1e,0x6a4a2a][(Math.random()*3)|0]});
-function populate(){for(const T of TOWNS){const b=T.b;const sk=npc('tk_'+T.id,Object.assign(TF_O(),{name:T.id==='nac'||T.id==='bexar'?'the storekeeper':'the tendero',near:20,vest:0x5a4a3a}));place(sk,b.x+3.5,b.z+2,0);faceKid(sk);
+function populate(){for(const T of TOWNS){const b=T.b;const sk=npc('tk_'+T.id,Object.assign(TF_O(),{name:T.id==='nac'||T.id==='bexar'||T.id==='fg'?'the storekeeper':'the tendero',near:20,vest:0x5a4a3a}));place(sk,b.x+3.5,b.z+2,0);faceKid(sk);
     for(let i=0;i<3;i++){const n=npc('tf_'+T.id+i,Object.assign(TF_O(),Math.random()<.4?{dress:[0x6a2a3a,0x2a4a5a,0xb8a070][i],hat:null,shawl:0x6a4a3a}:{}));const p=townSpot(T);place(n,p.x,p.z,rr(0,6));n.spd=3.4;n.wait=rr(0,4)}}}
 function townSpot(T){for(let k=0;k<20;k++){const a=rr(0,6.283),r=rr(6,T.r*.45),x=T.c.x+Math.cos(a)*r,z=T.c.z+Math.sin(a)*r;if(!blocked(x,z))return{x,z}}return{x:T.b.x+4,z:T.b.z+4}}
 function stepTowns(dt){for(const T of TOWNS){for(let i=0;i<3;i++){const n=NP['tf_'+T.id+i];if(!n||!n.top.visible||n.talking)continue;if(n.tx===null){n.wait-=dt;if(n.wait<0){const p=townSpot(T);go(n,p.x,p.z,3.4);n.wait=rr(3,9)}}else if(blocked(n.tx,n.tz)){n.tx=null}}
   const sk=NP['tk_'+T.id];if(sk&&sk.top.visible&&Math.hypot(sk.x-S.kid.x,sk.z-S.kid.z)<20)faceKid(sk)}
   const k=S.kid;for(const T of TOWNS){const inT=Math.hypot(k.x-T.c.x,k.z-T.c.z)<T.r;if(inT&&FP.inTown!==T.id){FP.inTown=T.id;say(T.id==='station'?'The stage station. A corral, a well, a coach with its tongue in the dirt.':T.name+'.',5000)}if(!inT&&FP.inTown===T.id)FP.inTown=null}}
 function freeWorld(){buildBoards();BOARDG.visible=true;buildRails();RAILG.visible=true;showP('hideouts');homeWorld();gravesWorld();for(const T of TOWNS)showP(...T.props);showP('mission','tinaja');
-  const J=PROPS.chi&&PROPS.chi.userData.jar;if(J)J.forEach(m=>m.visible=false);populate();FP.inTown=null}
-function leaveWorld(){homeLeave();BOARDG.visible=false;RAILG.visible=false;const J=PROPS.chi&&PROPS.chi.userData.jar;if(J)J.forEach(m=>m.visible=true)}
+  const J=PROPS.chi&&PROPS.chi.userData.jar;if(J)J.forEach(m=>m.visible=false);populate();FP.inTown=null;const gb=PROPS.griffin&&PROPS.griffin.userData.bear;if(gb)gb.visible=false}
+function leaveWorld(){{const gb=PROPS.griffin&&PROPS.griffin.userData.bear;if(gb)gb.visible=true}homeLeave();BOARDG.visible=false;RAILG.visible=false;const J=PROPS.chi&&PROPS.chi.userData.jar;if(J)J.forEach(m=>m.visible=true)}
 
 /* ---------- the jobs: hides, meat, a letter carried, a strayed horse brought in, bandits, and a survey of landmarks ---------- */
 const JOBS={
@@ -3901,7 +3902,8 @@ const SEC=[
 <p>The canteen holds four drinks, or eight with the big canteen ($3 at a store). Fill it at any river, well, or town. Jerked meat keeps. Whiskey burns going down. Game must be shot, dressed, and cooked at a fire before it does him much good. Raw meat will do in a pinch.</p>
 <p>To make camp he needs three armfuls of wood, broken off the dry brush. A camp gives a fire to cook at and a place to sleep. At night he chooses how to sleep. By the fire he rests well, but the light can bring raiders, who will take part of his money if he sleeps through them. Keeping watch warns him of raiders and rests him less. Sleeping cold hides him and rests him least. A torch lights the way after dark.</p>`],
 ['Hunting',`<p>Jackrabbits, pronghorn, and coyotes live in the country. Pronghorn are wary and run when a rider comes near. Shot game can be dressed for meat, and coyotes for pelts. Pelts sell for a dollar each, and some storekeepers pay more for a set number through the notice board.</p>`],
-['Towns',`<p>Five towns lie along the way: Nacogdoches, Béxar, the stage station, Chihuahua City, and San Diego. Santa Rita, the mining town in the Apache country, has its own place below. Each town has a store, a corral, and a notice board.</p>
+['Towns',`<p>Six towns lie along the way: Nacogdoches, Béxar, the stage station, Chihuahua City, Fort Griffin, and San Diego. Santa Rita, the mining town in the Apache country, has its own place below. Each town has a store, a corral, and a notice board.</p>
+<p>Four of them have a place to stay: the posadas in Chihuahua City and San Diego, the inn at Béxar, and the hotel at Fort Griffin, each with a sign and a lamp at its door. A room is a dollar. You sleep till morning under a roof, the horse is stabled, watered and fed, and you wake whole. A hot meal is fifty cents. A man with a price on him is turned away at the door.</p>
 <p>The store sells supplies (cartridges, balls and powder, shot, jerky, whiskey, and water), sells guns, and has things made better. It buys pelts, meat, whiskey, and guns.</p>
 <p>The store also sells gear, each piece seen on the kid or the horse once bought: an ammunition belt worn across the chest, which makes loading faster ($6); saddlebags behind the saddle, which carry twelve hides instead of four, sixteen pieces of meat instead of six, and twenty sticks of wood instead of ten ($8); a canvas duster, worn on foot, so the sun dries him slower ($10); Spanish spurs, which make the horse faster and ring when he walks ($4); and a brass spyglass ($8). Hold the spyglass and use it to look far off across the country; it lowers when he moves. A trader with a mule cask also travels the roads, and sells much the same.</p>
 <p>The towns are lived in. Dogs nose about, hens scatter from under the horse, and children run from a rider or a drawn gun. At dusk the lamps are lit. Riders and people on foot find their way round the buildings and along the streets, and a horse let go turns off from a wall.</p>`],
@@ -4059,6 +4061,105 @@ addEventListener('keydown',e=>{if(e.key==='v'||e.key==='V'){if(e.target&&/INPUT|
 {const _m=menuDo;menuDo=function(a){if(a==='focus'){set(!on);drawMenu();return}return _m(a)}}
 window.__focus={get on(){return on},set,get k(){return k}};
 return{set}})();
+
+/* ---------- wind, on trial in free play: the brush, the mesquite, the cottonwoods and the reeds bend as hard as the weather
+   blows (before this they moved the same in a dust storm as on a still morning), with gusts that come and go, and washing
+   hangs on lines in the towns and flaps with it. On or off from the pause menu; off puts the old fixed sway back ---------- */
+const WIND=(()=>{
+const KEY='meridian-wind-v1';let on=true;try{const v=localStorage.getItem(KEY);if(v!==null)on=v==='1'}catch(e){}
+const CALM=.12;let w=SWAY.uWind.value,gT=0,gust=0;
+const wOf=k=>{const d=WXK[k];return d&&d.wind?d.wind:0};
+const CU={uTime:SWAY.uTime,uWind:{value:.3}};
+// the washing: cloth hung from its top edge, the free edge carried by the wind
+function clothMat(c){const m=new THREE.MeshPhongMaterial({color:col(c),shininess:2,side:THREE.DoubleSide});
+  m.onBeforeCompile=sh=>{sh.uniforms.uTime=CU.uTime;sh.uniforms.uWind=CU.uWind;
+    sh.vertexShader='uniform float uTime,uWind;\n'+sh.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      float hang=clamp(-position.y/1.6,0.,1.);vec3 wp=(modelMatrix*vec4(0.,0.,0.,1.)).xyz;float ph=wp.x*.37+wp.z*.21;
+      float a=uWind*(.55+.45*sin(uTime*.9+ph));
+      transformed.z+=hang*(a*.9+sin(uTime*(3.+uWind*3.)+position.x*1.7+ph)*(.08+a*.35));
+      transformed.y+=hang*hang*a*.35;`)};
+  m.customProgramCacheKey=()=>'cloth';return m}
+const LINES=new THREE.Group();LINES.visible=false;scene.add(LINES);
+const PIECES=[[1.1,1.4,0xe8e0d0],[.8,1.0,0x8a3a2a],[1.4,1.2,0xd8d0b8],[.7,.9,0x3a4a6a],[1.2,1.5,0xf0ece0],[.9,1.1,0x6a5a3a],[.6,.8,0xc8a060]];
+const MATS={};const clothOf=c=>MATS[c]||(MATS[c]=clothMat(c));
+function line(x,z,ang,len,seed){const g=new THREE.Group();g.position.set(x,gy(x,z),z);g.rotation.y=ang;LINES.add(g);
+  for(const s of [-1,1]){live(C_(.09,.11,3.4,5),0x4a3a2a,s*len/2,1.7,0,g)}
+  const rope=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,len,4),mat(0xb8a888));rope.rotation.z=Math.PI/2;rope.position.y=3.2;g.add(rope);
+  let at=-len/2+.5,k=seed;while(at<len/2-.8){const [w,h,c]=PIECES[k%PIECES.length];k+=3;if(at+w>len/2-.4)break;
+    const geo=new THREE.PlaneGeometry(w,h,5,4);geo.translate(0,-h/2,0);const m=new THREE.Mesh(geo,clothOf(c));m.position.set(at+w/2,3.18,0);m.castShadow=true;g.add(m);
+    for(const px of [at+.08,at+w-.08])live(B_(.05,.18,.05),0x5a4a3a,px,3.25,0,g);at+=w+.7}}
+// behind a house or two in each town
+for(const [id,n] of [['chi',3],['sd',2],['bexar',2],['nac',2],['fg',2]]){const T=TOWNS.find(t=>t.id===id);if(!T)continue;const parent=PROPS[T.props[0]];if(!parent)continue;
+  const HS=HOUSES.filter(h=>h.G===parent&&!h.open&&h.door).sort((a,b)=>Math.hypot(a.x-T.c.x,a.z-T.c.z)-Math.hypot(b.x-T.c.x,b.z-T.c.z));
+  let made=0;for(const h of HS){if(made>=n)break;const ns=h.door==='n'||h.door==='s';
+    // the line runs behind the house, along its back wall, out on open ground away from the street
+    const N={w:[-1,0],e:[1,0],n:[0,-1],s:[0,1]}[h.door],back=(ns?h.d:h.w)/2+5,x=h.x-N[0]*back,z=h.z-N[1]*back,len=ns?Math.min(h.w,9):Math.min(h.d,9);
+    if(LINES.children.some(g=>Math.hypot(g.position.x-x,g.position.z-z)<8))continue;
+    {const ex=ns?len/2+.5:0,ez=ns?0:len/2+.5,hit=(px,pz)=>HOUSES.some(o=>Math.abs(px-o.x)<o.w/2+2&&Math.abs(pz-o.z)<o.d/2+2);if(hit(x,z)||hit(x+ex,z+ez)||hit(x-ex,z-ez))continue}
+    line(x,z,ns?0:Math.PI/2,len,made*2+id.length);made++}}
+function want(){if(!on)return .3;const now=wOf(WX.kind),was=wOf(WX.prev||WX.kind);return CALM+(was+(now-was)*clamp(WX.k,0,1))}
+HOOKS.push(dt=>{LINES.visible=typeof FP!=='undefined'&&FP.on;
+  gT-=dt;if(gT<0){gT=rr(2,7);gust=on?rr(0,.35):0}
+  const target=want()*(1+gust);w+=(target-w)*Math.min(1,dt*.8);
+  SWAY.uWind.value=on?w:.3;CU.uWind.value=on?w:0});
+function set(b){on=b;try{localStorage.setItem(KEY,on?'1':'0')}catch(e){}say(on?'Wind on.':'Wind off.',1800)}
+{const _d=drawMenu;drawMenu=function(){_d();const box=menuEl.querySelector('.pb2');if(!box||box.querySelector('[data-a="wind"]'))return;
+  const b=document.createElement('button');b.dataset.a='wind';b.textContent='Wind: '+(on?'on':'off');const main=box.querySelector('[data-a="main"]');box.insertBefore(b,main);
+  b.onclick=()=>{set(!on);drawMenu()};const B=[...box.querySelectorAll('button')];B.forEach((x,i)=>x.classList.toggle('sel',i===MENU.i))}}
+{const _m=menuDo;menuDo=function(a){if(a==='wind'){set(!on);drawMenu();return}return _m(a)}}
+window.__wind={get on(){return on},set,get w(){return w},LINES};
+return{set}})();
+
+/* ---------- inns in the larger towns: a posada in Chihuahua City and San Diego, an inn at Béxar, a hotel at Fort Griffin.
+   One of each town's houses takes a sign and a lamp at its door. A room is a dollar: a bed under a roof, the horse
+   stabled, watered and fed, and the kid wakes whole. A hot meal is fifty cents. A man with a price on him is turned away ---------- */
+const INN=(()=>{
+const DEF={chi:{sign:'POSADA',name:'the posada',who:'The posadero'},sd:{sign:'POSADA',name:'the posada',who:'The posadero'},
+  bexar:{sign:'INN',name:'the inn',who:'The innkeeper'},fg:{sign:'HOTEL',name:'the hotel',who:'The clerk'}};
+const INNS=[];
+const DOORN={w:[-1,0],e:[1,0],n:[0,-1],s:[0,1]};
+const doorAt=h=>({w:[h.x-h.w/2,h.z],e:[h.x+h.w/2,h.z],n:[h.x,h.z-h.d/2],s:[h.x,h.z+h.d/2]})[h.door];
+function signTex(t){const cv=document.createElement('canvas');cv.width=128;cv.height=48;const g=cv.getContext('2d');
+  g.fillStyle='#4a3424';g.fillRect(0,0,128,48);g.fillStyle='#6a4c34';g.fillRect(3,3,122,42);g.strokeStyle='#2a1c12';g.lineWidth=2;g.strokeRect(5,5,118,38);
+  g.fillStyle='#e8d8b0';g.font='bold 22px monospace';g.textAlign='center';g.textBaseline='middle';g.fillText(t,64,25);
+  const tx=new THREE.CanvasTexture(cv);tx.magFilter=THREE.NearestFilter;tx.minFilter=THREE.NearestFilter;tx.generateMipmaps=false;tx.encoding=THREE.sRGBEncoding;return tx}
+function build(){for(const T of TOWNS){const D=DEF[T.id];if(!D)continue;const parent=PROPS[T.props[0]];if(!parent)continue;
+  const b=T.b||boardAt(T);
+  const HS=HOUSES.filter(h=>h.G===parent&&!h.open&&h.door).map(h=>{const [dx,dz]=doorAt(h);return{h,dx,dz,d:Math.hypot(dx-b.x,dz-b.z)}}).filter(o=>o.d>9).sort((a,b2)=>a.d-b2.d);
+  const o=HS[0];if(!o)continue;const h=o.h,[nx,nz]=DOORN[h.door],tx=-nz,tz=nx;
+  // the sign on a bracket beside the door, and a lamp over it
+  const span=(h.door==='n'||h.door==='s'?h.w:h.d);const side=Math.min(span/2-1.2,3.4);
+  const sx=o.dx+tx*side+nx*.9,sz=o.dz+tz*side+nz*.9,gy0=gy(o.dx,o.dz);
+  const G=new THREE.Group();parent.add(G);
+  live(B_(Math.abs(nx)>.5?1.2:.15,.15,Math.abs(nz)>.5?1.2:.15),0x2a1c12,o.dx+tx*side+nx*.45,gy0+4.3,o.dz+tz*side+nz*.45,G);
+  const sg=new THREE.Mesh(new THREE.PlaneGeometry(2.8,1.05),new THREE.MeshBasicMaterial({map:signTex(D.sign),side:THREE.DoubleSide}));
+  sg.position.set(sx,gy0+3.55,sz);sg.rotation.y=Math.atan2(tx,tz);G.add(sg);
+  const lamp=new THREE.Mesh(B_(.45,.6,.45),new THREE.MeshBasicMaterial({color:0xffd890}));lamp.position.set(o.dx+nx*.6,gy0+4.6,o.dz+nz*.6);G.add(lamp);
+  INNS.push({T,D,h,at:{x:o.dx+nx*2.2,z:o.dz+nz*2.2}})}}
+build();
+const cents=()=>FP.money*100+(FP.pennies||0);
+function pay(c){const t=cents()-c;FP.money=Math.floor(t/100);FP.pennies=t%100;SND.coin&&SND.coin()}
+const fmt=c=>c%100?`$${Math.floor(c/100)}.${String(c%100).padStart(2,'0')}`:`$${c/100}`;
+async function enter(I){const D=I.D;
+  if(window.__law&&__law.wanted&&__law.wanted()){await ask('',`${D.who} looks at you, and then at the paper tacked by the door with a price on it. There are no rooms, he says, not tonight and not tomorrow.`,['Go']);return}
+  for(;;){const night=isDark();const o=[`Take a room${night?' for the night':''}, $1`,'A hot meal, 50 cents','Go'];
+    const r=await ask('',`${D.who} of ${D.name} looks up from his book. You have ${fmt(cents())}.`,o,{name:D.name.replace(/^the /,'The ').replace(/^./,c=>c.toUpperCase())});
+    if(r===2)return;
+    if(r===1){if(cents()<50){say('You have not got fifty cents.',3000);continue}pay(50);FP.food=1;S.water=Math.max(S.water,.9);
+      await ask('',I.T.id==='chi'||I.T.id==='sd'?'Beans and a stew of goat with chiles, tortillas, coffee. You eat it all.':'Beef, beans, biscuits and coffee. You eat it all.',['Go on']);renderFree();saveFree();continue}
+    if(cents()<100){say('You have not got a dollar.',3000);continue}
+    if(ZOMB.length){say('You cannot sleep with the dead walking.',4000);return}
+    pay(100);if(S.mounted)getDown();S.cut++;await fade(1,1100);
+    const hh=((S.t%24)+24)%24;const add=hh>=19||hh<5?((hh>=19?30:6)-hh):6;S.t+=add;
+    FP.hp=100;FP.food=Math.max(.3,FP.food-add/60);S.water=1;FP.cant=CANMAX();
+    if(window.__more){const H=__more.M.horse;H.water=1;H.hp=Math.min(100,H.hp+40)}
+    saveFree();
+    await card(`<h2>Morning</h2><p>A bed with a straw tick and a blanket, a window with no glass, a jug of water on the floor. The horse is in the corral behind with hay and water. You sleep under a roof and wake whole.</p><button class="main">Go out</button>`);
+    S.cut=Math.max(0,S.cut-1);await fade(0,900);renderFree();return}}
+{const _a=FREE.acts;FREE.acts=function(){const L=_a.call(this);if(!FP.on)return L;const k=S.kid;
+  for(const I of INNS){if(Math.hypot(I.at.x-k.x,I.at.z-k.z)<4.5)L.unshift(here(I.at,4.5,`Go into ${I.D.name}`,()=>enter(I)))}return L}}
+window.__inn={INNS,enter};
+return{INNS}})();
 
 
 requestAnimationFrame(frame);
