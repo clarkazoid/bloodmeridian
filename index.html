@@ -1,3 +1,4 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Blood Meridian: Free Play</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -735,7 +736,7 @@ const STONEC=[0xb8a080,0xa8906c,0x9a8262,0x8a7a68,0x7a6a58,0xc0a888,0xc8b090];
 function wallKind(c){return BOARDS.includes(c)||c===0x6a5444?'planks':STONEC.includes(c)?'stone':'adobe'}
 // a box whose faces repeat the texture once every few feet, whatever its size
 function wallBox(w,h,d,tile=7){const g=new THREE.BoxGeometry(w,h,d);const uv=g.attributes.uv;const dims=[[d,h],[d,h],[w,d],[w,d],[w,h],[w,h]];for(let f=0;f<6;f++)for(let v=0;v<4;v++){const i=f*4+v;uv.setXY(i,uv.getX(i)*dims[f][0]/tile,uv.getY(i)*dims[f][1]/tile)}return g}
-function buildingDetail(H,w,d,h,c,door,o){const B={};const part=(geo,col,x,y,z,ry=0,rx=0,rz=0)=>{geo.rotateZ(rz);geo.rotateX(rx);geo.rotateY(ry);geo.translate(x,y,z);(B[col]=B[col]||[]).push(geo)};
+function buildingDetail(H,w,d,h,c,door,o){if(o.frame)return frameBuild(H,w,d,h,c,door,o);const B={};const part=(geo,col,x,y,z,ry=0,rx=0,rz=0)=>{geo.rotateZ(rz);geo.rotateX(rx);geo.rotateY(ry);geo.translate(x,y,z);(B[col]=B[col]||[]).push(geo)};
   const R=()=>Math.random(),style=o.style||(BOARDS.includes(c)?'board':'adobe'),dk=new THREE.Color(c).multiplyScalar(.8).getHex(),lt=new THREE.Color(c).lerp(col(0xe8dcc4),.25).getHex();
   // which way the door faces, as a frame: u along the door wall, n out of it
   const F={s:{nx:0,nz:1,ux:1,uz:0,L:w,D:d},n:{nx:0,nz:-1,ux:-1,uz:0,L:w,D:d},e:{nx:1,nz:0,ux:0,uz:-1,L:d,D:w},w:{nx:-1,nz:0,ux:0,uz:1,L:d,D:w}}[door];
@@ -744,12 +745,15 @@ function buildingDetail(H,w,d,h,c,door,o){const B={};const part=(geo,col,x,y,z,r
   if(style==='adobe'){
     part(new THREE.BoxGeometry(w+.2,.25,d+.2),dk,0,.12,0);// the plinth where the wall meets the ground
     for(const [px,pz,pw,pd] of [[0,d/2-.2,w,.4],[0,-d/2+.2,w,.4],[w/2-.2,0,.4,d],[-w/2+.2,0,.4,d]])part(new THREE.BoxGeometry(pw,.8,pd),lt,px,h+.4,pz);// parapet
-    part(new THREE.BoxGeometry(w-.6,.2,d-.6),dk,0,h+.06,0);// the roof, set a little above the wall top so the two never share a plane
+    part(new THREE.BoxGeometry(w-.6,.2,d-.6),0x5e3c2a,0,h+.06,0);for(const [px,pz,pw,pd] of [[0,d/2-.2,w+.08,.5],[0,-d/2+.2,w+.08,.5],[w/2-.2,0,.5,d+.08],[-w/2+.2,0,.5,d+.08]])part(new THREE.BoxGeometry(pw,.14,pd),0xf4dcb0,px,h+.85,pz);// the roof, and a pale cap along the parapet, set a little above the wall top so the two never share a plane
     const nv=Math.max(3,Math.round(w/2.4));for(let i=0;i<nv;i++){const vx=-w/2+(i+.5)*w/nv;for(const sd of [-1,1])part(new THREE.CylinderGeometry(.2,.2,1.2,6),0x5a4430,vx,h-.9,sd*(d/2+.5),0,Math.PI/2)}// vigas
     for(const u of [-F.L*.3,F.L*.3])part(new THREE.BoxGeometry(.35,.3,1.4),0x6a5440,...at(u,h+.15,.6),ry);// canales
     // the door: a deep frame, a lintel, the leaf a little open
     part(new THREE.BoxGeometry(2.6,3.8,.3),0x1e1612,...at(0,1.9,.02),ry);part(new THREE.BoxGeometry(3.4,.45,.6),0x5a4430,...at(0,4.0,.15),ry);
-    {const lf=new THREE.BoxGeometry(1.25,3.5,.16);lf.translate(.62,0,0);lf.rotateY(-.6);part(lf,0x6a4e34,...at(-1.2,1.8,.25),ry)}
+    {const lf=new THREE.BoxGeometry(1.25,3.5,.16);lf.translate(.62,0,0);lf.rotateY(-.6);part(lf,0x8a5230,...at(-1.2,1.8,.25),ry)}
+    if(R()<.45){part(new THREE.BoxGeometry(Math.min(6,F.L*.45),1.1,.5),lt,...at(0,h+1.35,-.2),ry);part(new THREE.BoxGeometry(Math.min(6,F.L*.45)+.1,.14,.56),0xf4dcb0,...at(0,h+1.95,-.2),ry)}
+    for(let k=0;k<2;k++)if(R()<.7){const u=(R()-.5)*F.L*.7,y=R()*h*.5+.8;if(Math.abs(u)<2)continue;for(let r=0;r<3;r++)for(let q=0;q<3;q++)if(R()<.75)part(new THREE.BoxGeometry(.8,.36,.08),0xa0623e,...at(u+q*.85-(r%2)*.42,y+r*.42,.04),ry)}
+    if(R()<.3){const hu=F.L/2+2.2;const ov=new THREE.SphereGeometry(1.5,10,7,0,6.283,0,1.7);ov.scale(1,.95,1);part(ov,0xd0a070,...at(R()<.5?hu:-hu,0,-1.2),ry);part(new THREE.BoxGeometry(.7,.6,.2),0x2a1a12,...at(R()<.5?hu:-hu,.4,.2),ry)}
     for(const u of [-F.L*.32,F.L*.32]){if(Math.abs(u)<2.6)continue;part(new THREE.BoxGeometry(1.4,1.2,.25),0x1e1612,...at(u,h*.55,.02),ry);part(new THREE.BoxGeometry(1.8,.18,.5),lt,...at(u,h*.55-.7,.15),ry);
       for(const k of [-.35,0,.35])part(new THREE.CylinderGeometry(.05,.05,1.2,4),0x3a2a1e,...at(u+k,h*.55,.14),ry)}
     if(R()<.45&&F.L>9){// a ramada of poles and brush along the door wall
@@ -773,9 +777,116 @@ function buildingDetail(H,w,d,h,c,door,o){const B={};const part=(geo,col,x,y,z,r
     if(R()<.7){for(const u of [-2.4,2.4])part(new THREE.BoxGeometry(.25,2.4,.25),0x4a3a2c,...at(u,1.2,5.4),ry);part(new THREE.BoxGeometry(5.4,.2,.2),0x4a3a2c,...at(0,2.2,5.4),ry)}
     if(R()<.5)part(new THREE.CylinderGeometry(.6,.55,1.4,8),0x5a4030,...at(F.L/2-1,.8,2.2),ry)}
   for(const k in B){const m=new THREE.Mesh(mergeGeos(B[k]),mat(+k));m.castShadow=true;m.receiveShadow=true;H.add(m)}}
+/* ---------- Fort Griffin, restyled (test): frame buildings after the style reference. Each kind is built facing +z in its own
+   frame and then turned to its door: plank courses picked out in a darker line, cream trim at the corners and eaves, shingle
+   roofs in courses, false fronts with painted signs, porches and balconies on posts, side stairs, barrels, crates and rails ---------- */
+const FRAMEPAL={wood:[0xb8703c,0xc8844a,0xa05a30,0xd09a5c],dark:0x5e3622,roof:0x4a2a20,roof2:0x5e3828,trim:0xfff0c8,brick:0xd0603a,brick2:0xa84a2e,
+  white:0xfff6dc,blue:0x7a8aa0,glass:0x2a2a32,lit:0xffc870,iron:0x3a3436,hay:0xc8a050};
+function signTex2(t,bg,fg){const cv=document.createElement('canvas'),n=t.length;cv.width=Math.max(128,n*22+28);cv.height=40;const g=cv.getContext('2d');
+  g.fillStyle=bg;g.fillRect(0,0,cv.width,40);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(0,34,cv.width,6);g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=2;g.strokeRect(3,3,cv.width-6,34);
+  g.fillStyle=fg;g.font='bold 24px monospace';g.textAlign='center';g.textBaseline='middle';g.fillText(t,cv.width/2,21);
+  const tx=new THREE.CanvasTexture(cv);tx.magFilter=THREE.NearestFilter;tx.minFilter=THREE.NearestFilter;tx.generateMipmaps=false;tx.encoding=THREE.sRGBEncoding;return {tx,aspect:cv.width/40}}
+function frameBuild(H,w,d,h,c,door,o){
+  const B={};const ry={s:0,n:Math.PI,e:Math.PI/2,w:-Math.PI/2}[door];const L=(door==='s'||door==='n')?w:d,D=(door==='s'||door==='n')?d:w;
+  const part=(geo,cl,x,y,z,rx=0,rz=0,ryy=0)=>{geo.rotateZ(rz);geo.rotateX(rx);geo.rotateY(ryy);geo.translate(x,y,z);geo.rotateY(ry);(B[cl]=B[cl]||[]).push(geo)};
+  const box=(bw,bh,bd,cl,x,y,z,rx,rz,ryy)=>part(new THREE.BoxGeometry(bw,bh,bd),cl,x,y,z,rx,rz,ryy);
+  const kind=o.frame,P=FRAMEPAL,base=o.wall||P.wood[(Math.abs(H.position.x|0))%P.wood.length];
+  const dk=new THREE.Color(base).multiplyScalar(.72).getHex();
+  // the walls, then plank courses on every face, then cream corner boards
+  const shell=(bw,bh,bd,cl,x=0,z=0,y0=0,courses=true)=>{box(bw,bh,bd,cl,x,y0+bh/2,z);
+    if(courses){const lc=new THREE.Color(cl).multiplyScalar(.78).getHex();for(let k=.8;k<bh-.2;k+=.8){box(bw+.06,.08,.06,lc,x,y0+k,z+bd/2+.02);box(bw+.06,.08,.06,lc,x,y0+k,z-bd/2-.02);box(.06,.08,bd+.06,lc,x+bw/2+.02,y0+k,z);box(.06,.08,bd+.06,lc,x-bw/2-.02,y0+k,z)}}
+    for(const sx of [-1,1])for(const sz of [-1,1])box(.3,bh,.3,P.trim,x+sx*bw/2,y0+bh/2,z+sz*bd/2)};
+  const win=(x,y,z,face=1,lit=false)=>{const fz=z+face*.06;box(1.3,1.7,.12,lit?P.lit:P.glass,x,y,fz);box(1.6,.2,.2,P.trim,x,y+.95,fz);box(1.6,.2,.2,P.trim,x,y-.95,fz);box(.15,1.9,.18,P.trim,x-.72,y,fz);box(.15,1.9,.18,P.trim,x+.72,y,fz);box(.1,1.7,.16,P.trim,x,y,fz)};
+  const sidewin=(x,y,z,face)=>{const fx=x+face*.06;box(.12,1.7,1.3,P.glass,fx,y,z);box(.2,.2,1.6,P.trim,fx,y+.95,z);box(.2,.2,1.6,P.trim,fx,y-.95,z)};
+  const doorway=(x,y0,z,dw=1.9,dh=3.2,cl=P.dark)=>{box(dw,dh,.14,cl,x,y0+dh/2,z+.07);box(dw+.4,.25,.22,P.trim,x,y0+dh+.12,z+.1);box(.2,dh,.2,P.trim,x-dw/2-.1,y0+dh/2,z+.1);box(.2,dh,.2,P.trim,x+dw/2+.1,y0+dh/2,z+.1)};
+  // a gable roof, ridge along x, laid in shingle courses
+  const gable=(bw,bd,y0,pitch=.55,cl=P.roof,x=0,z=0)=>{const half=(bd/2+.7)/Math.cos(pitch),rise=(bd/2+.7)*Math.tan(pitch);
+    for(const sd of [-1,1]){const g=new THREE.BoxGeometry(bw+1,.3,half);g.translate(0,0,sd*half/2);g.rotateX(sd*pitch);g.translate(x,y0+rise,z);g.rotateY(ry);(B[cl]=B[cl]||[]).push(g);
+      for(let k=1;k<half/.7;k++){const s=new THREE.BoxGeometry(bw+1.02,.08,.12);s.translate(0,.17,sd*k*.7);s.rotateX(sd*pitch);s.translate(x,y0+rise,z);s.rotateY(ry);(B[P.roof2]=B[P.roof2]||[]).push(s)}}
+    box(bw+1.1,.3,.35,P.dark,x,y0+rise+.12,z);// ridge
+    // gable ends: triangles of wall closing the roof
+    for(const sx of [-1,1]){const tri=new THREE.BufferGeometry();const hz=bd/2,hx=sx*bw/2;tri.setAttribute('position',new THREE.Float32BufferAttribute([hx,0,-hz, hx,0,hz, hx,rise-.1,0, hx,0,hz, hx,0,-hz, hx,rise-.1,0],3));tri.computeVertexNormals();tri.translate(x,y0,z);tri.rotateY(ry);(B[o.gableC||base]=B[o.gableC||base]||[]).push(tri)}
+    return rise};
+  // a false front with a stepped top and a sign
+  const falseFront=(fw,top,z,cl,text,signBg,signFg)=>{box(fw,top,.35,cl,0,top/2,z);box(fw*.55,1.1,.35,cl,0,top+.55,z);box(fw*.3,.6,.35,cl,0,top+1.4,z);
+    box(fw+.3,.25,.5,P.trim,0,top,z+.05);box(fw*.55+.3,.22,.5,P.trim,0,top+1.1,z+.05);box(.3,top,.45,P.trim,-fw/2,top/2,z+.02);box(.3,top,.45,P.trim,fw/2,top/2,z+.02);
+    if(text)sign(text,0,top-1.1,z+.26,Math.min(fw*.8,text.length*.9+1.4),signBg,signFg)};
+  const sign=(text,x,y,z,sw,bg='#3a2418',fg='#f0dcb0')=>{sw*=1.25;const s=signTex2(text,bg,fg),sh=sw/s.aspect*1.4;const m=new THREE.Mesh(new THREE.PlaneGeometry(sw,Math.max(1.3,sh)),new THREE.MeshBasicMaterial({map:s.tx}));
+    const v=new THREE.Vector3(x,y,z).applyAxisAngle(new THREE.Vector3(0,1,0),ry);m.position.copy(v);m.rotation.y=ry;H.add(m)};
+  const porch=(pw,y,depth,postH,z0,withRail=true,awning=true)=>{box(pw,.3,depth,P.dark,0,y+.15,z0+depth/2);for(let k=0;k<pw/.6;k++)box(.06,.04,depth,0x3a2418,-pw/2+k*.6,y+.31,z0+depth/2);
+    const n=Math.max(2,Math.round(pw/4.5));for(let i=0;i<=n;i++){const px=-pw/2+.25+i*(pw-.5)/n;box(.3,postH,.3,P.trim,px,y+postH/2+.3,z0+depth-.25)}
+    if(awning){const aw=new THREE.BoxGeometry(pw+.4,.22,depth+.5);aw.rotateX(.16);aw.translate(0,y+postH+.45,z0+depth/2);aw.rotateY(ry);(B[P.roof]=B[P.roof]||[]).push(aw);box(pw+.4,.22,.2,P.trim,0,y+postH+.2,z0+depth+.15)}
+    if(withRail){box(pw,.15,.15,P.trim,0,y+1.3,z0+depth-.25);for(let k=0;k<pw/.7;k++)box(.1,1,.1,P.trim,-pw/2+.35+k*.7,y+.8,z0+depth-.25)}};
+  const barrel=(x,z)=>{part(new THREE.CylinderGeometry(.55,.5,1.3,10),0x6a4428,x,.65,z);box(1.12,.08,1.12,P.iron,x,.35,z);box(1.12,.08,1.12,P.iron,x,1.0,z)};
+  const crate=(x,z,s=1)=>{box(1.1*s,1.1*s,1.1*s,0x9a7048,x,.55*s,z);box(1.14*s,.12,.12,0x6a4a30,x,.55*s,z+.55*s)};
+  const rail=(x,z,len=5)=>{box(.25,2.2,.25,P.dark,x-len/2,1.1,z);box(.25,2.2,.25,P.dark,x+len/2,1.1,z);box(len+.3,.2,.2,P.dark,x,2,z)};
+  const trough=(x,z)=>{box(3,.8,1.1,0x6a4a30,x,.4,z);box(2.7,.1,.8,0x4a6a7a,x,.78,z)};
+  const fz=D/2;// front face
+  switch(kind){
+  case 'hotel':{const hh=9;shell(L,hh,D,base);const rise=gable(L,D,hh,.5);
+    for(const u of [-L*.33,0,L*.33]){win(u,hh*.75,fz,1,u===0);if(u)win(u,hh*.28,fz)}doorway(0,0,fz);
+    porch(L,0,3.2,hh*.45,fz,false,false);box(L,.3,3.2,P.dark,0,hh*.5,fz+1.6);// balcony floor
+    {const n=Math.round(L/.7);for(let k=0;k<n;k++)box(.1,1,.1,P.trim,-L/2+.35+k*.7,hh*.5+.8,fz+3);box(L,.15,.15,P.trim,0,hh*.5+1.3,fz+3)}
+    for(const u of [-L/2+.25,L/2-.25,-L/6,L/6])box(.3,hh*.5-.3,.3,P.trim,u,hh*.75,fz+3);
+    {const aw=new THREE.BoxGeometry(L+.4,.22,3.7);aw.rotateX(.16);aw.translate(0,hh+.2,fz+1.6);aw.rotateY(ry);(B[P.roof]=B[P.roof]||[]).push(aw)}
+    sign('HOTEL',0,hh*.5-.6,fz+3.2,5.4);for(const u of [-L*.33,L*.33])sidewin(L/2,hh*.75,u*.4,1);barrel(L/2-1,fz+4);rail(0,fz+6.2);break}
+  case 'saloon':{const hh=7;shell(L,hh,D,base);gable(L,D,hh,.5);falseFront(L,hh+2.6,fz,base,o.text||'SALOON','#2a1a14','#f0c870');
+    doorway(0,0,fz,2.2,3,0x6a4428);box(1,1.4,.2,P.trim,-.55,1.6,fz+.25);box(1,1.4,.2,P.trim,.55,1.6,fz+.25);// batwing doors
+    for(const u of [-L*.32,L*.32])win(u,2.6,fz,1,true);win(-L*.25,hh*.72,fz);win(L*.25,hh*.72,fz);
+    porch(L,0,3,4.2,fz);barrel(-L/2+.8,fz+3.8);barrel(-L/2+2,fz+4.1);rail(0,fz+6);trough(L/2-1.5,fz+5.8);break}
+  case 'store':{const hh=6.5;shell(L,hh,D,base);gable(L,D,hh,.45);falseFront(L,hh+2.4,fz,o.ff||0xd8c8a8,o.text||'GENERAL STORE','#5a2a20','#f0dcb0');
+    doorway(0,0,fz);for(const u of [-L*.3,L*.3]){box(2.6,2.2,.12,P.glass,u,2.2,fz+.06);box(2.9,.2,.2,P.trim,u,3.4,fz+.1);box(2.9,.2,.2,P.trim,u,1.05,fz+.1)}
+    porch(L,0,3,4,fz,false);crate(-L/2+1.2,fz+2);crate(-L/2+1.3,fz+2,.7);crate(L/2-1.4,fz+1.6);barrel(L/2-2.8,fz+1.8);rail(0,fz+5.8);break}
+  case 'bank':{const hh=8;box(L,hh,D,P.brick,0,hh/2,0);for(let k=.5;k<hh;k+=.5)box(L+.04,.06,D+.04,P.brick2,0,k,0);
+    box(L-.2,.3,D-.2,P.roof,0,hh+.05,0);for(const sz of [-1,1]){box(L+.5,.5,.5,P.trim,0,hh+.1,sz*D/2);box(.5,.5,D+.5,P.trim,sz*L/2,hh+.1,0)}box(L+.2,1.2,.4,P.brick,0,hh+.8,fz-.1);box(L+.6,.25,.6,P.trim,0,hh+1.45,fz-.1);
+    for(const u of [-L*.32,L*.32]){win(u,hh*.72,fz);win(u,2.4,fz)}doorway(0,0,fz,2.2,3.4,0x3a2418);sign(o.text||'BANK',0,hh*.5+.2,fz+.3,4.5,'#1a1a1a','#f0dcb0');
+    box(L*.5,.4,1.6,0x8a8478,0,.2,fz+.8);break}
+  case 'livery':{const hh=6;shell(L,hh,D,o.wall||0x7a4e36);
+    // a barn: the gable faces the street, so the roof runs back from the front
+    const pitch=.62,half=(L/2+.7)/Math.cos(pitch),rise=(L/2+.7)*Math.tan(pitch);
+    for(const sd of [-1,1]){const g=new THREE.BoxGeometry(half,.3,D+1);g.translate(sd*half/2,0,0);g.rotateZ(-sd*pitch);g.translate(0,hh+rise,0);g.rotateY(ry);(B[P.roof]=B[P.roof]||[]).push(g);
+      for(let k=1;k<half/.7;k++){const s=new THREE.BoxGeometry(.12,.08,D+1.02);s.translate(sd*k*.7,.17,0);s.rotateZ(-sd*pitch);s.translate(0,hh+rise,0);s.rotateY(ry);(B[P.roof2]=B[P.roof2]||[]).push(s)}}
+    {const tri=new THREE.BufferGeometry();tri.setAttribute('position',new THREE.Float32BufferAttribute([-L/2,0,fz+.05, L/2,0,fz+.05, 0,rise-.1,fz+.05],3));tri.computeVertexNormals();tri.translate(0,hh,0);tri.rotateY(ry);const cl=o.wall||0x7a4e36;(B[cl]=B[cl]||[]).push(tri)}
+    box(4.6,4.6,.14,P.dark,0,2.3,fz+.07);box(.2,4.6,.2,P.trim,-2.3,2.3,fz+.12);box(.2,4.6,.2,P.trim,2.3,2.3,fz+.12);box(4.8,.2,.2,P.trim,0,4.6,fz+.12);
+    for(const sd of [-1,1]){box(.12,4.6*1.25,.12,P.trim,sd*1.15,2.3,fz+.16,0,sd*.85)}// the X braces on the doors
+    box(1.8,1.6,.14,P.dark,0,hh+rise*.45,fz+.07);box(.25,.25,1.6,P.dark,0,hh+rise*.75,fz+.8);// hayloft door and its hoist beam
+    sign(o.text||'LIVERY',0,hh-.3,fz+.2,4.4,'#e8d8b8','#3a2418');
+    // a corral off the side
+    const cx=L/2+5;for(let k=0;k<5;k++)for(const zz of [-D/2,D/2+2])box(.25,2,.25,P.dark,cx-3+k*1.6,1,zz);for(const yy of [.8,1.6]){box(6.6,.15,.12,P.dark,cx+.2,yy,-D/2);box(6.6,.15,.12,P.dark,cx+.2,yy,D/2+2);box(.12,.15,D+2,P.dark,cx+3.4,yy,1)}
+    for(let k=0;k<4;k++)box(1.4,.8,1,P.hay,-L/2+1+k*.2,.4+k%2*.8,fz+1.2+(k>>1)*1.1);trough(cx,D/2-1);break}
+  case 'smith':{const hh=5.5;shell(L*.6,hh,D,o.wall||0x9a6a48,-L*.2,0);gable(L*.6,D,hh,.5,P.roof,-L*.2,0);
+    // the open shed: a roof on posts, the forge glowing, the anvil
+    for(const u of [L*.1,L/2-.3])for(const zz of [fz-.3,-fz+.3])box(.3,hh,.3,P.dark,u,hh/2,zz);
+    {const g=new THREE.BoxGeometry(L*.42,.25,D+1.2);g.rotateZ(-.18);g.translate(L*.3,hh+.3,0);g.rotateY(ry);(B[P.roof]=B[P.roof]||[]).push(g)}
+    box(2.6,1.4,2,0x5a5048,L*.3,.7,-1);box(1.8,.3,1.4,0xff7a30,L*.3,1.45,-1);box(.8,3.5,.8,0x4a4440,L*.3,3.5,-1.6);// forge and its chimney
+    box(1.2,.5,.5,P.iron,L*.3,1.1,1.8);box(.6,.7,.5,0x4a3a2c,L*.3,.35,1.8);// anvil on its block
+    doorway(-L*.2,0,fz);win(-L*.2-L*.18,2.6,fz);falseFront(L*.6,hh+1.8,fz,o.wall||0x9a6a48,'SMITH','#2a1a14','#f0dcb0');
+    // falseFront is centred; shift it by drawing it relative to the closed part
+    barrel(L/2-.6,fz+1);crate(L/2-.8,fz+2.4,.8);for(let k=0;k<3;k++)part(new THREE.TorusGeometry(.7,.12,5,10),P.iron,L/2+.2,.9+k*.2,-fz+1+k*.05,Math.PI/2);
+    H.userData.forge={x:L*.3,y:1.6,z:-1};break}
+  case 'boarding':{const hh=9;shell(L,hh,D,o.wall||0xc89a6a);gable(L,D,hh,.5);
+    for(const u of [-L*.33,0,L*.33]){win(u,hh*.75,fz,1,u===L*.33);win(u,hh*.3,fz)}doorway(-L*.15,0,fz);
+    // the stair up the side to the upper door, with its rail
+    const sx=L/2+.9;for(let k=0;k<11;k++)box(1.6,.2,.9,P.dark,sx,.4+k*.42,fz-1-k*.62);box(.2,.2,7.8,P.trim,sx+.75,3.4,fz-4.1,-.6);for(let k=0;k<4;k++)box(.2,1.2+k*1.4,.2,P.trim,sx+.75,(1.2+k*1.4)/2+.2,fz-1-k*2);
+    box(2.2,.3,2.2,P.dark,sx,4.95,-fz+1.4);doorway(L/2,4.9,-fz+1.4,1.6,2.6);
+    porch(L,0,2.6,3.6,fz,true);sign(o.text||'ROOMS',0,hh-1.2,fz+.15,3.8,'#e8d8b8','#5a2a20');break}
+  case 'marshal':{const hh=6;box(L,hh,D,0xb0a088,0,hh/2,0);for(let k=.6;k<hh;k+=.6)for(let j=-L/2+.6+(k*10%2)*.5;j<L/2;j+=1.2)box(.05,.5,.05,0x8a7a68,j,k-.3,fz+.03);for(let k=.6;k<hh;k+=.6)box(L+.04,.06,D+.04,0x8a7a68,0,k,0);
+    box(L,.3,D,P.roof,0,hh+.1,0);for(const sz of [-1,1]){box(L+.6,.4,.5,P.trim,0,hh+.15,sz*D/2);box(.5,.4,D+.6,P.trim,sz*L/2,hh+.15,0)}doorway(0,0,fz,2,3.2,0x3a3436);for(const u of [-L*.3,L*.3]){box(1,1.2,.12,P.glass,u,3,fz+.06);for(let k=-.3;k<=.3;k+=.3)box(.08,1.2,.16,P.iron,u+k,3,fz+.1)}
+    sign(o.text||'MARSHAL',0,hh-.8,fz+.15,4.6,'#2a2a2a','#e8e0c8');rail(0,fz+3.5);break}
+  case 'church':{const hh=6.5;shell(L,hh,D,P.white,0,0,0,true);const rise=gable(L,D,hh,.62,P.roof);
+    // the tower on the front, with its open belfry and spire and the cross
+    const tz=fz+1.2,tw=3.2;box(tw,hh+3,tw,P.white,0,(hh+3)/2,tz);for(const sx of [-1,1])for(const sz of [-1,1])box(.3,hh+3,.3,P.trim,sx*tw/2,(hh+3)/2,tz+sz*tw/2);
+    for(const sx of [-1,1])for(const sz of [-1,1])box(.35,2.4,.35,P.white,sx*(tw/2-.2),hh+4.2,tz+sz*(tw/2-.2));box(tw+.4,.3,tw+.4,P.trim,0,hh+3,tz);box(tw+.4,.3,tw+.4,P.trim,0,hh+5.4,tz);
+    part(new THREE.ConeGeometry(tw*.75,4.5,4),P.roof,0,hh+7.8,tz,0,0,Math.PI/4);box(.25,2.2,.25,P.trim,0,hh+11,tz);box(1.2,.25,.25,P.trim,0,hh+11.4,tz);
+    part(new THREE.CylinderGeometry(.5,.7,.9,8),0x8a7040,0,hh+4.4,tz);// the bell
+    doorway(0,0,tz+tw/2,1.6,2.8,0x6a4428);for(let k=0;k<4;k++)box(3.6-k*.4,.3,.6,P.white,0,.15+k*.3,tz+tw/2+1.6-k*.5);
+    for(const u of [-D*.3,0,D*.3]){box(.12,2.4,1.1,P.glass,L/2+.06,3,u);box(.2,.3,1.4,P.trim,L/2+.1,4.3,u);box(.12,2.4,1.1,P.glass,-L/2-.06,3,u)}break}
+  default:{shell(L,h,D,base);gable(L,D,h,.5);doorway(0,0,fz);win(-L*.3,2.6,fz);win(L*.3,2.6,fz);porch(L,0,2.6,3.6,fz)}}
+  for(const k in B){const m=new THREE.Mesh(mergeGeos(B[k]),+k===P.lit||+k===0xff7a30?new THREE.MeshBasicMaterial({color:col(+k)}):mat(+k));m.castShadow=true;m.receiveShadow=true;H.add(m)}}
+
 // every house's footprint, so the game knows when the kid is indoors
 let HOUSES=[];
-function house(G,x,z,w,d,h,c,o={}){const y=baseY(x,z,w,d)-.3,t=.7,door=o.door||'s',gap=o.gap||4.4,H=new THREE.Group();H.position.set(x,y,z);G.add(H);HOUSES.push({G,x,z,w,d,door,c,open:!!o.open});
+function house(G,x,z,w,d,h,c,o={}){const y=baseY(x,z,w,d)-.3,t=.7,door=o.door||'s',gap=o.gap||4.4,H=new THREE.Group();H.position.set(x,y,z);G.add(H);HOUSES.push({G,x,z,w,d,door,c,open:!!o.open,frame:o.frame});
   if(!o.open){buildingDetail(H,w,d,h,c,door,o);
     const dd={s:[0,d/2+.05,0],n:[0,-d/2-.05,0],e:[w/2+.05,0,1],w:[-w/2-.05,0,1]}[door];
     G.userData.blk.push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2});H.userData.door={x:x+(dd[2]?dd[0]*1.2:0),z:z+(dd[2]?0:dd[1]*1.2)};return H}
@@ -808,7 +919,7 @@ const RAIN=(()=>{const n=600,pos=new Float32Array(n*6);for(let i=0;i<n;i++){cons
   const m=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0xb8c0c8,transparent:true,opacity:.3}));m.frustumCulled=false;scene.add(m);m.visible=false;return m})();
 
 /* ---------- the picture: the Walden game's own, drawn low and blown up, graded, rimmed, dithered ---------- */
-let VIEW=160,camYaw=Math.PI*.25,PADSPIN=0,yawNow=Math.PI*.25;const PITCH=.8;const camera=new THREE.OrthographicCamera(-1,1,1,-1,1,1700);
+let VIEW=160,camYaw=Math.PI*.25,PADSPIN=0,yawNow=Math.PI*.25;const PITCH=.6;const camera=new THREE.OrthographicCamera(-1,1,1,-1,1,1700);
 // tilting down: below the high view the picture goes over to a perspective camera behind the kid, out to the haze
 const pcam=new THREE.PerspectiveCamera(46,1,.8,2600);let VCAM=camera,camPitch=PITCH,pitchT=PITCH,PADTILT=0;const PMIN=.1;
 let rt,PIX=3;
@@ -823,7 +934,7 @@ const post=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.ShaderMaterial(
   float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
   float bay2(vec2 a){a=floor(a);return fract(a.x/2.+a.y*a.y*.75);}
   float bayer(vec2 p){return bay2(.5*p)*.25+bay2(p);}
-  vec3 grade(vec3 c){float l=luma(c);c=mix(vec3(l),c,mix(.84,.66,uNight));c*=mix(vec3(1.),vec3(.8,.92,1.18),uNight*.75);c*=mix(vec3(.86,.9,1.05),vec3(1.05,1.,.92),smoothstep(.12,.8,l));c=(c-.42)*1.2+.42;return pow(max(c,0.),vec3(1.06));}
+  vec3 grade(vec3 c){float l=luma(c);c=mix(vec3(l),c,mix(1.12,.66,uNight));c*=mix(vec3(1.),vec3(.8,.92,1.18),uNight*.75);c*=mix(vec3(.86,.9,1.05),vec3(1.05,1.,.92),smoothstep(.12,.8,l));c=(c-.42)*1.28+.42;return pow(max(c,0.),vec3(1.16));}
   void main(){vec2 px=1./res;vec2 tp=floor(vUv*uOut+uSub);
     vec2 uv=(tp+.5)*px;
     vec3 c=grade(texture2D(tColor,uv).rgb);
@@ -835,7 +946,7 @@ const post=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.ShaderMaterial(
     c=mix(c,c*1.06+vec3(.06,.05,.03),uHeat*.5);
     vec2 wp=tp+uCam;c*=.985+.025*hash(wp);c+=(hash(wp*.73+3.1)-.5)*.006;
     float v=length(vUv-.5);c*=1.-v*v*(.7+uNight*.4);
-    {float L=14.;c=c*.94+.035;vec3 cc=c*L+(bayer(tp)-.5)*.72+.5;c=floor(cc)/L;c=mix(c,c*vec3(1.03,1.,.94),.45);}
+    {float L=14.;c=c*1.0+.0;vec3 cc=c*L+(bayer(tp)-.5)*.72+.5;c=floor(cc)/L;c=mix(c,c*vec3(1.03,1.,.94),.45);}
     c*=step(uFade*1.06,bayer(tp)*.94+.03);
     {vec2 sc=gl_FragCoord.xy,hs=uScr*.5;float rad=34.*uPR,ins=10.*uPR;vec2 q2=abs(sc-hs)-(hs-ins-rad);float dd=length(max(q2,0.))-rad;c*=1.-smoothstep(-40.*uPR,0.,dd)*.4;c=mix(c,vec3(0.),smoothstep(-1.,1.,dd));}
     gl_FragColor=vec4(c,1.);}`}));
@@ -1207,8 +1318,8 @@ function glint(G,x,z,c=0xfff8e0){const m=new THREE.Mesh(B_(.35,.35,.35),basic(c)
 const GLINTS=[];HOOKS.push((dt,t)=>{for(const g of GLINTS)if(g.parent&&g.parent.visible&&!g.userData.gone)g.visible=Math.sin(t*3+g.position.x)>.4&&DAYK>.2});
 
 /* ---------- the places ---------- */
-const ADOBE=0xb89a78,ADOBE2=0xa88a6a,BOARD=0x6a5444,CANVAS=0xd8d0bc;
-prop('nac',G=>{for(let x=2905;x<=3035;x+=21)for(const s of [-1,1]){const z=TRAILZ(x)+s*22;if(Math.abs(x-P.BAR.x)<16&&s<0)continue;if(Math.abs(x-P.TENT.x)<18&&s>0)continue;house(G,x,z,14,10,rr(6,9),[BOARD,0x5a4a3c,0x7a6250][(x/21|0)%3],{door:s<0?'s':'n'})}
+const ADOBE=0xd8a874,ADOBE2=0xc49062,BOARD=0x6a5444,CANVAS=0xd8d0bc;
+prop('nac',G=>{for(let x=2905;x<=3035;x+=21)for(const s of [-1,1]){const z=TRAILZ(x)+s*22;if(Math.abs(x-P.BAR.x)<16&&s<0)continue;if(Math.abs(x-P.TENT.x)<18&&s>0)continue;{const K=[['store',{}],['saloon',{text:'SALOON'}],['boarding',{text:'ROOMS'}],['smith',{}],['store',{text:'DRY GOODS',ff:0x7a8aa0}],['hotel',{}],['livery',{}],['marshal',{text:'SHERIFF'}],['store',{text:'SADDLERY',ff:0xd0b890}],['bank',{text:'LAND OFFICE'}]];const i=((x-2905)/21|0)*2+(s>0?1:0),k=K[i%K.length];house(G,x,z,14,10,7,BOARD,{door:s<0?'s':'n',frame:k[0],...k[1]})}}
   house(G,P.BAR.x,P.BAR.z,22,14,7,0x5a4a3c,{open:true,door:'s',floor:0x4a3a2c});live(B_(12,3,1.6),0x3a2a1e,P.BAR.x-1,gy(P.BAR.x,P.BAR.z)+1.3,P.BAR.z-5,G);
   live(B_(16,.4,3),0x5a4a3a,2960,gy(2960,-20)+.4,TRAILZ(2960)-10,G);// the plank walk
   for(let x=2910;x<3040;x+=30){const l=live(B_(.5,.6,.5),0xffd890,x,gy(x,TRAILZ(x)-14)+6,TRAILZ(x)-14,G);l.material=new THREE.MeshBasicMaterial({color:0xffd890})}});
@@ -1217,8 +1328,19 @@ prop('tent',G=>{const y=gy(P.TENT.x,P.TENT.z);const T=new THREE.Group();T.positi
   for(const s of [-1,1])live(C_(.15,.15,13,5),0x5a4a3a,s*8.5,6.5,-10.5,T);G.userData.blk.push({x0:P.TENT.x-8,x1:P.TENT.x+8,z0:P.TENT.z-10,z1:P.TENT.z+10})});
 prop('hermit',G=>{const H=house(G,P.HERMIT.x,P.HERMIT.z,9,7,4.5,0x6a5a42,{door:'n',roofC:0x4a5030});fireRing(G,P.HERMIT.x+6,P.HERMIT.z-8)});
 prop('bexar',G=>{house(G,2830,176,18,12,6,ADOBE,{open:true,door:'n'});live(B_(8,2.6,1.4),0x4a3a2a,2828,gy(2828,180)+1.2,180,G);house(G,2872,166,10,8,5,ADOBE2,{door:'n'});house(G,2806,160,10,8,6,ADOBE,{door:'e'});house(G,2900,182,12,8,6,ADOBE2,{door:'n'});
-  live(C_(.15,.15,14,5),0x4a3a2a,2878,gy(2878,158)+7,158,G);const fl=live(B_(3,1.8,.1),0x8a2a24,2879.6,gy(2878,158)+12.8,158,G);G.userData.flag=fl});
+  live(C_(.15,.15,14,5),0x4a3a2a,2878,gy(2878,158)+7,158,G);const fl=live(B_(3,1.8,.1),0x8a2a24,2879.6,gy(2878,158)+12.8,158,G);G.userData.flag=fl;mission2(G,2852,132,0)});
 
+// a small mission church: an adobe nave, a bell wall over the door with two openings and a cross, a walled yard of graves
+function mission2(G,x,z,ry){const M=new THREE.Group();M.position.set(x,gy(x,z),z);M.rotation.y=ry;G.add(M);const W=0xead2a8,T=0xf6e6c4,DK=0x2a1a12;
+  live(B_(10,7.5,18),W,0,3.75,-9,M);live(B_(10.6,.3,18.6),T,0,7.6,-9,M);live(B_(9.4,.25,17.4),0x7a5238,0,7.7,-9,M);
+  live(B_(11,12,1.6),W,0,6,.3,M);live(B_(5,2.2,1.7),W,0,13.1,.3,M);live(B_(11.4,.35,1.9),T,0,12.1,.3,M);
+  for(const bx of [-2.6,2.6]){live(B_(1.6,2.2,1.8),DK,bx,9.6,.3,M);live(C_(.5,.7,.9,8),0x8a6a3a,bx,9.5,.3,M)}live(B_(1.4,1.6,1.8),DK,0,13.2,.3,M);
+  live(B_(.3,2.4,.3),0x5a3a24,0,15.4,.3,M);live(B_(1.5,.3,.3),0x5a3a24,0,15.9,.3,M);
+  live(B_(3,4.4,.3),0x7a4a2c,0,2.2,1.15,M);live(B_(3.8,.5,.5),T,0,4.6,1.2,M);for(let k=0;k<3;k++)live(B_(5-k*.8,.3,.8),0xc8a070,0,.15+k*.3,2-k*.5,M);
+  for(const sx of [-1,1])for(const zz of [-4,-9,-14])live(B_(.15,1.6,1),DK,sx*5.08,5,zz,M);
+  for(const [px,pz,pw,pd] of [[-9,-6,.6,14],[-15.7,-6,.6,14],[-12.35,1,7.3,.6],[-12.35,-13,7.3,.6]])live(B_(pw,1.6,pd),W,px,.8,pz,M);
+  for(let k=0;k<5;k++){const gx=-13.8+(k%3)*1.6,gz=-1-((k/3)|0)*3;live(B_(.2,1.2,.2),0x5a3a24,gx,.6,gz,M);live(B_(.8,.18,.18),0x5a3a24,gx,.95,gz,M);live(B_(.9,.2,2),0xb08860,gx,.1,gz-1.1,M)}
+  const fl=Math.abs(ry)>1;G.userData.blk.push({x0:x-6,x1:x+6,z0:fl?z-2:z-19,z1:fl?z+19:z+2});return M}
 // the cathedral of Chihuahua: a stone front with two bell towers in stages, domes and crosses, a deep arched door
 function cathedral(G,x,z){const ch=new THREE.Group();ch.position.set(x,gy(x,z),z);G.add(ch);const ST=0xc8b294,SD=0xb09878,TR=0xe0cfb0,DK=0x1a1410,DOME=0xa89070;
   live(B_(20,13,24),ST,0,6.5,-3,ch);live(B_(21,.6,25),TR,0,13.2,-3,ch);// the nave
@@ -1303,14 +1425,15 @@ prop('cart',G=>{const C=new THREE.Group();G.add(C);G.userData.C=C;live(B_(4,.4,6
 prop('mules',G=>{deadHorse(G,P.MULES.x,P.MULES.z,0x5a4a3a,true);deadHorse(G,P.MULES.x+4,P.MULES.z+4,0x6a5a4a,true)});
 prop('beach',G=>{const a=horse(0x6a4a30,{bare:true}),b=horse(0x8a6a48,{bare:true});a.g.scale.setScalar(.82);b.g.scale.setScalar(.5);G.add(a.g,b.g);G.userData.h=[a,b]});
 prop('sd',G=>{for(const [x,z,d] of [[400,70,'s'],[480,74,'s'],[470,112,'n'],[405,114,'n'],[520,100,'w']])house(G,x,z,14,10,6,x%3?ADOBE:ADOBE2,{door:d});
-  house(G,P.SD.x,P.SD.z,12,10,6,0x9a8a74,{open:true,door:'s',gap:6});for(let i=0;i<9;i++)live(C_(.12,.12,5.6,5),0x2a2420,P.SD.x-2.6+i*.65,gy(P.SD.x,P.SD.z+5)+2.8,P.SD.z+5,G);G.userData.blk.push({x0:P.SD.x-3,x1:P.SD.x+3,z0:P.SD.z+4.6,z1:P.SD.z+5.4})});
+  house(G,P.SD.x,P.SD.z,12,10,6,0x9a8a74,{open:true,door:'s',gap:6});for(let i=0;i<9;i++)live(C_(.12,.12,5.6,5),0x2a2420,P.SD.x-2.6+i*.65,gy(P.SD.x,P.SD.z+5)+2.8,P.SD.z+5,G);G.userData.blk.push({x0:P.SD.x-3,x1:P.SD.x+3,z0:P.SD.z+4.6,z1:P.SD.z+5.4});mission2(G,442,150,Math.PI)});
 prop('coulee',G=>{const c=P.COULEE;const X=new THREE.Group();X.position.set(c.x+6,gy(c.x+6,c.z+2)+.4,c.z+2);X.rotation.set(0,.5,PI/2);G.add(X);live(B_(.6,10,.6),0x5a4430,0,0,0,X);live(B_(5,.6,.6),0x5a4430,0,2.6,0,X);
   for(let i=0;i<16;i++){const x=c.x+rr(-30,30),z=c.z+rr(-5,5);live(B_(rr(1,2.2),.12,rr(.8,1.6)),[0x2a2420,0x8a2a24,0xd8d0c0,0x4a3a2a][i%4],x,gy(x,z)+.1,z,G).rotation.y=rr(0,6)}
   for(const [dx,dz,s] of [[-14,10,4],[-8,12,3.4],[-11,15,5],[-17,13,3]])live(new THREE.DodecahedronGeometry(s,0),0x8a7a68,c.x+dx,gy(c.x+dx,c.z+dz)+s*.5,c.z+dz,G)});
 prop('griffin',G=>{const c=P.FG;house(G,c.x,c.z,36,26,7,0x6a5444,{open:true,door:'s',gap:6,floor:0x5a4434});live(B_(14,1.4,8),0x5a4434,c.x,gy(c.x,c.z)+.6,c.z-8,G);live(B_(1.6,3,16),0x3a2a1e,c.x-14,gy(c.x,c.z)+1.4,c.z+2,G);
   for(const [x,z] of [[6,4],[10,8],[-4,6],[2,9]])live(C_(1.4,1.4,2.4,10),0x4a3a2a,c.x+x,gy(c.x,c.z)+1.2,c.z+z,G);for(let i=0;i<5;i++){const l=new THREE.Mesh(B_(.6,.6,.6),new THREE.MeshBasicMaterial({color:0xffd890}));l.position.set(c.x-15+i*7.5,gy(c.x,c.z)+7.2,c.z);G.add(l)}
-  for(let i=0;i<5;i++)house(G,c.x-60+i*30,c.z+44,16,10,6,[BOARD,0x5a4a3c,0x7a6250][i%3],{door:'n'});
-  for(let i=0;i<4;i++)house(G,c.x-64+i*26,c.z-58,15,10,rr(5.5,7.5),[0x7a6250,BOARD,0x5a4a3c][i%3],{door:'s'});house(G,c.x+56,c.z-6,12,16,6,0x5a4a3c,{door:'w'});house(G,c.x-58,c.z-4,12,14,7,0x7a6250,{door:'e'});
+  {const S5=[['livery',{}],['smith',{}],['hotel',{}],['boarding',{}],['marshal',{}]];for(let i=0;i<5;i++)house(G,c.x-60+i*30,c.z+44,16,10,6,BOARD,{door:'n',frame:S5[i][0],...S5[i][1]});
+   const N4=[['saloon',{text:'BEE HIVE'}],['store',{}],['bank',{}],['saloon',{text:'SALOON',wall:0x7a4e36}]];for(let i=0;i<4;i++)house(G,c.x-64+i*26,c.z-58,15,10,7,BOARD,{door:'s',frame:N4[i][0],...N4[i][1]});
+   house(G,c.x+56,c.z-6,12,16,6,BOARD,{door:'w',frame:'church'});house(G,c.x-58,c.z-4,12,14,7,BOARD,{door:'e',frame:'store',text:'DRY GOODS',ff:0x7a8aa0,wall:0x9a6a48})}
   const j=house(G,c.x+30,c.z-22,4,4,6,0x6a5444,{door:'w'});const D=new THREE.Group();D.position.set(c.x+28,gy(c.x+28,c.z-22),c.z-22-1.2);G.add(D);live(B_(.2,5,2.4),0x4a3a2c,0,2.6,1.2,D);G.userData.door=D;
   const bear=new THREE.Group();G.add(bear);G.userData.bear=bear;live(S_(1.6,10,8),0x3a2a1e,0,4.4,0,bear).scale.set(1,1.4,.9);live(S_(1,10,8),0x3a2a1e,0,7.2,.2,bear);live(B_(.6,.5,.8),0x2a1e14,0,7,1.1,bear);for(const s of [-1,1]){live(S_(.35,6,4),0x3a2a1e,s*.7,8,0,bear);live(C_(.4,.35,2.6,6),0x3a2a1e,s*1.6,5.6,.3,bear).rotation.z=-s*2.4}
   const dress=live(new THREE.ConeGeometry(2.8,4.2,12,1,true),0xc8909a,0,2.8,0,bear);dress.material=mat(0xc8909a,{ds:1});live(new THREE.ConeGeometry(.9,1.2,8),0xd8c060,0,8.4,0,bear)});
@@ -3116,7 +3239,7 @@ const CLOUDS=[];postU.uIVP={value:new THREE.Matrix4()};postU.uCloud={value:0};po
 const _ivp=new THREE.Matrix4();
 function cloudTick(dt){const w=dpU.uWind.value;postU.uCO.value.x+=(w.x*.6+3)*dt*.0075;postU.uCO.value.y+=w.y*.6*dt*.0075;const want=(WX.kind==='cloudy'?1:WX.kind==='clear'?.55:WX.kind==='rain'||WX.kind==='storm'?0:.4)*DAYK;postU.uCloud.value+=(want-postU.uCloud.value)*Math.min(1,dt*.5);
   const cam=VCAM||camera;cam.updateMatrixWorld();_ivp.multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse).invert();postU.uIVP.value.copy(_ivp)}
-{const m=post.material;if(!m.fragmentShader.includes('uv.x+=sin(uTime')){m.fragmentShader=m.fragmentShader.replace('vec2 uv=(tp+.5)*px;','vec2 uv=(tp+.5)*px;uv.x+=sin(uTime*2.6+uv.y*70.)*px.x*.9*uHeat*step(.35,uv.y);');m.needsUpdate=true}}
+{const m=post.material;if(!m.fragmentShader.includes('uv.x+=sin(uTime')){m.fragmentShader=m.fragmentShader.replace('vec2 uv=(tp+.5)*px;','vec2 uv=(tp+.5)*px;uv.x+=sin(uTime*2.6+uv.y*70.)*px.x*.4*uHeat*step(.35,uv.y);');m.needsUpdate=true}}
 
 /* ---------- 8. towns that are lived in ---------- */
 const LIFE={};
@@ -4135,7 +4258,7 @@ function build(){for(const T of TOWNS){const D=DEF[T.id];if(!D)continue;const pa
   const sg=new THREE.Mesh(new THREE.PlaneGeometry(2.8,1.05),new THREE.MeshBasicMaterial({map:signTex(D.sign),side:THREE.DoubleSide}));
   sg.position.set(sx,gy0+3.55,sz);sg.rotation.y=Math.atan2(tx,tz);G.add(sg);
   const lamp=new THREE.Mesh(B_(.45,.6,.45),new THREE.MeshBasicMaterial({color:0xffd890}));lamp.position.set(o.dx+nx*.6,gy0+4.6,o.dz+nz*.6);G.add(lamp);
-  INNS.push({T,D,h,at:{x:o.dx+nx*2.2,z:o.dz+nz*2.2}})}}
+  if(h.frame)G.visible=false;INNS.push({T,D,h,at:{x:o.dx+nx*2.2,z:o.dz+nz*2.2}})}}
 build();
 const cents=()=>FP.money*100+(FP.pennies||0);
 function pay(c){const t=cents()-c;FP.money=Math.floor(t/100);FP.pennies=t%100;SND.coin&&SND.coin()}
@@ -4166,3 +4289,5 @@ requestAnimationFrame(frame);
 })();
 
 </script>
+
+</body></html>
