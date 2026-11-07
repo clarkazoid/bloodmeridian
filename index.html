@@ -319,8 +319,17 @@ function topoShade(c,x,z,h){const e=3,hE=groundH(x+e,z),hW=groundH(x-e,z),hS=gro
   if(TOPO===2)c.lerp(col(0xb0583a),clamp((slope-.25)*1.1,0,.55))}
 const GROUND=(()=>{const W=3500,D=(ZW+170)*2,g=new THREE.PlaneGeometry(W,D,440,Math.round(D/7.6));g.rotateX(-Math.PI/2);g.translate(1450,0,0);const p=g.attributes.position,cols=new Float32Array(p.count*3),c=new THREE.Color();
   const PAL={sand:[0xc49a62,0xb08452],alkali:[0xe6dcc4,0xcfc2a2],rock:[0x9a8064,0x7e6650],malpais:[0x4e4440,0x3a3432]};
+  // each region keeps its own ground (November 2026): Texas grass-tan, Chihuahua red earth, the Apachería pink-grey,
+  // the Colorado's grey-green silt, California pale gold. Blended across the borders so there is no seam
+  const RPAL=[[2600,0x9e9a5c,0x7e8048],[2150,0xca7c4c,0xa45e3a],[1850,0xc49a62,0xb08452],[1380,0xb88a76,0x98705e],[1000,0xa8a482,0x8a8a6a],[600,0xc49a62,0xb08452],[-1e9,0xdcb878,0xbe9a62]];
+  const _ca=new THREE.Color(),_cb=new THREE.Color(),_cc=new THREE.Color(),_cd=new THREE.Color();
+  function sandPal(x){let i=RPAL.findIndex(r=>x>=r[0]);const r=RPAL[i];_ca.set(r[1]);_cb.set(r[2]);
+    const up=i>0?RPAL[i-1][0]:1e9,dn=r[0];const bl=60;
+    if(i>0&&x>up-bl){const q=RPAL[i-1],t=(x-(up-bl))/(2*bl);_ca.lerp(_cc.set(q[1]),t);_cb.lerp(_cd.set(q[2]),t)}
+    else if(i<RPAL.length-1&&x<dn+bl){const q=RPAL[i+1],t=((dn+bl)-x)/(2*bl);_ca.lerp(_cc.set(q[1]),t);_cb.lerp(_cd.set(q[2]),t)}
+    return[_ca.getHex(),_cb.getHex()]}
   for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),h=groundH(x,z);p.setY(i,h);const zn=zone(x,z);let k=fbm(x*.06,z*.06,5);
-    const PP=PAL[zn];c.set(PP[0]).lerp(col(PP[1]),clamp(k*1.6-.5,0,1));
+    const PP=zn==='sand'?sandPal(x):PAL[zn];c.set(PP[0]).lerp(col(PP[1]),clamp(k*1.6-.5,0,1));
     if(h>18)c.lerp(col(0x8a6e58),clamp((h-18)/30,0,.8));if(Math.abs(z-TRAILZ(x))<3.2)c.multiplyScalar(.9);
     const rd=riverD(x,z);if(rd.r&&rd.d<rd.r.w+9)c.lerp(col(0x6e6a4a),clamp(1-(rd.d-rd.r.w)/9,0,1)*.6);
     if(x<seaXL(z)+40&&z>shoreZ(x)-14)c.lerp(col(0xd8c8a0),clamp((z-shoreZ(x)+14)/10,0,1));
@@ -4296,6 +4305,100 @@ HOOKS.push(dt=>{const L=document.getElementById('kledger');if(!L||L.hidden)retur
 addEventListener('keydown',e=>{const L=document.getElementById('kledger');if(!L||L.hidden)return;if(e.key==='ArrowDown'||e.key==='s'){e.preventDefault();L.scrollTop+=60}else if(e.key==='ArrowUp'||e.key==='w'){e.preventDefault();L.scrollTop-=60}},true);
 window.__road={get ev(){return EV},LMK,SEENL,spawn,rumour,mk:(k,x,z)=>{clearEv();EV=mkEvent(k,x,z);return EV}};
 return{}})();
+/* ---------- step 2 of the ways forward (November 2026): prices that differ by town, and work in more than one stage ---------- */
+const STEP2=(()=>{
+/* ---- prices by town. What a store pays for hides, meat and whiskey, and what it asks for supplies, depend on where it is:
+   hides fetch most at Fort Griffin and San Diego, whiskey is wanted at the mines, and goods cost more far from the supply roads ---- */
+const TRADE={nac:{pelt:150,meat:25,whisky:50,buy:1},bexar:{pelt:100,meat:25,whisky:50,buy:1},station:{pelt:100,meat:50,whisky:75,buy:1.5},
+  chi:{pelt:75,meat:25,whisky:25,buy:1},fg:{pelt:300,meat:25,whisky:50,buy:1},sd:{pelt:200,meat:25,whisky:50,buy:1.5},santa:{pelt:100,meat:75,whisky:150,buy:2}};
+let CUR=null;const tr=()=>TRADE[CUR&&CUR.id]||{pelt:100,meat:25,whisky:50,buy:1};
+const money$=c=>c%100?`$${Math.floor(c/100)}.${String(c%100).padStart(2,'0')}`:`$${c/100}`;
+const addC=c=>{const t=(FP.pennies||0)+c;FP.money+=Math.floor(t/100);FP.pennies=t%100};
+{const _sh=shop;shop=async function(T,sk){CUR=T;try{return await _sh(T,sk)}finally{CUR=null}}}
+{const _sb=shopBuy;shopBuy=async function(sk,nm){const m=tr().buy;if(m===1)return _sb(sk,nm);const _p=pay;pay=p=>_p(Math.ceil(p*m));try{return await _sb(sk,nm)}finally{pay=_p}}}
+shopSell=async function(sk,nm){for(;;){const P=tr(),o=[];
+  if(FP.pelts)o.push([`Sell ${FP.pelts} pelt${FP.pelts>1?'s':''}, ${money$(P.pelt)} each`,()=>{addC(FP.pelts*P.pelt);FP.pelts=0}]);
+  if(FP.cooked+FP.raw)o.push([`Sell your meat, ${money$(P.meat)} a piece`,()=>{addC((FP.cooked+FP.raw)*P.meat);FP.cooked=0;FP.raw=0}]);
+  if(FP.whisky)o.push([`Sell a bottle of whiskey back, ${money$(P.whisky)}`,()=>{FP.whisky--;addC(P.whisky)}]);
+  if(FP.rifle)o.push(['Sell the rifle, $8',()=>{FP.rifle=false;FP.rshots=0;if(FP.held==='rifle')FP.held=null;FP.money+=8}]);
+  if(FP.shotgun)o.push(['Sell the shotgun, $6',()=>{FP.shotgun=false;FP.sshots=0;if(FP.held==='shotgun')FP.held=null;FP.money+=6}]);
+  if(!o.length){await ask(sk,'You have nothing he wants.',['Go on'],{name:nm});return}
+  const c=await ask(sk,`What will you sell? He pays ${money$(P.pelt)} a hide here. You have ${money()}.`,[...o.map(x=>x[0]),'Done'],{name:nm});if(c>=o.length)return;o[c][1]();SND.coin&&SND.coin();renderFree();saveFree()}};
+// the news at the boards now and then carries prices
+const PRICE_NEWS=['Hides fetch three dollars apiece at Fort Griffin, where the buffalo men sell.','They pay two dollars a hide in San Diego, for the ships.',
+  'Whiskey is dear at the mines at Santa Rita. A bottle that costs a dollar in Chihuahua sells there for a dollar and a half.','Meat sells for fifty cents at the stage station, and seventy-five at the mines.',
+  'Everything at the stores out west costs half again what it does in Texas.'];
+if(window.__road&&__road.rumour){const _r=__road.rumour;__road.rumour=(x,z)=>Math.random()<.3?PRICE_NEWS[(Math.random()*PRICE_NEWS.length)|0]:_r(x,z)}
+
+/* ---- work in stages. A horse thief to be tracked through a ranchero's word to his camp, where the kid decides what to do with
+   him; and a dead man's effects found at his grave and carried to his widow in another town ---- */
+const RANCHEROS=['Don Ignacio Robles','Don Mateo Saenz','Señora Elena Paz','Don Rafael Ochoa'],DEAD=['Samuel Pryor','Willis Dent','José Ancira','Henry Coyle','Asa Whitlock'];
+const spot=(cx,cz,r0,r1)=>{for(let k=0;k<60;k++){const a=rr(0,6.283),r=rr(r0,r1),x=cx+Math.cos(a)*r,z=clamp(cz+Math.sin(a)*r,-ZW+50,ZW-50);if(okGround(x,z)&&x>20&&x<3020&&TOWNS.every(o=>Math.hypot(o.c.x-x,o.c.z-z)>110))return{x,z}}return{x:cx-r0,z:cz}};
+JOBS.thief={make:T=>{const r=spot(T.c.x,T.c.z,160,300),c=spot(r.x,r.z,200,360);const who=RANCHEROS[(Math.random()*RANCHEROS.length)|0];
+  return{type:'thief',from:T.id,stage:0,rx:r.x,rz:r.z,cx:c.x,cz:c.z,who,pay:8,text:`A mare was stolen from the rancho of ${who}. Ride out and ask which way the thief went, then bring her back`}}};
+JOBS.effects={make:T=>{const L=TOWNS.filter(o=>o.id!==T.id&&o.id!=='santa');const to=L[(Math.random()*L.length)|0],g=spot(T.c.x,T.c.z,280,560),who=DEAD[(Math.random()*DEAD.length)|0];
+  return{type:'effects',from:T.id,to:to.id,stage:0,x:g.x,z:g.z,who,pay:9,text:`${who} died out in the country and was buried where he fell. Find the grave, take what he left, and carry it to his widow in ${to.name}`}}};
+// scene bits are kept out of the job itself, so the job still saves
+let JS={G:null,mare:null,thief:null,ranch:null};
+function clearBits(){if(JS.G)scene.remove(JS.G);if(JS.mare){scene.remove(JS.mare.g);const i=HORSES.indexOf(JS.mare);if(i>=0)HORSES.splice(i,1)}JS={G:null,mare:null,thief:null,ranch:null}}
+{const _c=clearJobBits;clearJobBits=function(J){if(J&&(J.type==='thief'||J.type==='effects'))clearBits();return _c(J)}}
+{const _d=dropJob;dropJob=function(){const J=FP.job;if(J&&(J.type==='thief'||J.type==='effects'))clearBits();return _d()}}
+function grp(x,z){const G=new THREE.Group();G.position.set(x,gy(x,z),z);scene.add(G);return G}
+function ensure(){const J=FP.job;if(!J||(J.type!=='thief'&&J.type!=='effects'))return;const k=S.kid;
+  if(J.type==='thief'){
+    if(J.stage===0&&!JS.ranch&&Math.hypot(J.rx-k.x,J.rz-k.z)<300){clearBits();JS.G=grp(J.rx,J.rz);live(B_(12,5,9),ADOBE,0,2.5,0,JS.G);live(B_(11.6,.3,8.6),0x5e3c2a,0,5.1,0,JS.G);live(B_(1.8,3,.2),0x6a4428,0,1.5,4.55,JS.G);for(let i=0;i<5;i++)live(C_(.15,.15,1.4,5),0x6a4a30,-4.8+i*2.4,4.4,4.9,JS.G).rotation.x=Math.PI/2;
+      for(let i=0;i<12;i++){const a=i/12*6.283;live(C_(.18,.2,2.6,5),0x5a4632,14+Math.cos(a)*7,1.3,4+Math.sin(a)*6,JS.G)}
+      const p=person({coat:0x6a3a2a,trou:0x3e362e,hat:'sombrero',hatC:0xc8b080,hair:0x1a1410,skin:0xa87a58});p.g.position.set(0,0,9);p.g.scale.setScalar(.82);JS.G.add(p.g);JS.ranch=true}
+    if(J.stage>=1&&!JS.thief&&Math.hypot(J.cx-k.x,J.cz-k.z)<300){if(JS.G)scene.remove(JS.G);JS.G=grp(J.cx,J.cz);fireRing(JS.G,0,0);JS.G.children[JS.G.children.length-1].position.set(0,0,0);
+      const p=person({coat:0x4a4038,trou:0x3e362e,hat:'wide',hatC:0x3a3026,hair:0x5a4028,beard:0x5a4028,skin:0xc89c7c});p.g.position.set(2.5,0,1);p.g.rotation.y=-1;p.g.scale.setScalar(.82);JS.G.add(p.g);JS.thief=p;
+      if(!JS.mare){const h=horse(0x9a7a58,{bare:true});h.g.scale.setScalar(.82);h.g.position.set(J.cx-6,gy(J.cx-6,J.cz+3),J.cz+3);scene.add(h.g);JS.mare=h}}
+    if(J.stage===2&&!JS.mare){const h=horse(0x9a7a58,{bare:true});h.g.scale.setScalar(.82);h.g.position.set(k.x-6,gy(k.x-6,k.z),k.z);scene.add(h.g);JS.mare=h}}
+  if(J.type==='effects'&&J.stage===0&&!JS.G&&Math.hypot(J.x-k.x,J.z-k.z)<300){JS.G=grp(J.x,J.z);for(let i=0;i<7;i++)live(new THREE.DodecahedronGeometry(.8,0),0x9a8a76,Math.cos(i)*1+rr(-.3,.3),.4,Math.sin(i)*1.6,JS.G);live(B_(.25,2.6,.25),0x5a3a24,0,1.7,-2,JS.G);live(B_(1.4,.25,.25),0x5a3a24,0,2.4,-2,JS.G)}}
+// the mare follows on a lead, and a prisoner walks ahead of her
+const follow=(o,dist,dt,sp0)=>{const k=S.kid,bx=k.x-Math.sin(k.yaw)*dist,bz=k.z-Math.cos(k.yaw)*dist,dx=bx-o.position.x,dz=bz-o.position.z,d=Math.hypot(dx,dz);if(d>1.5){const sp=Math.min(d,(d>14?26:k.sp>.5?18:8)*sp0*dt);o.position.x+=dx/d*sp;o.position.z+=dz/d*sp;o.rotation.y=Math.atan2(dx,dz)}o.position.y=gy(o.position.x,o.position.z)};
+HOOKS.push(dt=>{if(typeof FP==='undefined'||!FP.on)return;ensure();const J=FP.job;if(!J||J.type!=='thief'||J.stage!==2)return;if(JS.mare)follow(JS.mare.g,7,dt,1);
+  if(J.prisoner){if(!JS.walker){const p=person({coat:0x4a4038,trou:0x3e362e,hat:'wide',hatC:0x3a3026,hair:0x5a4028,beard:0x5a4028,skin:0xc89c7c});p.g.scale.setScalar(.82);p.g.position.set(S.kid.x-11,0,S.kid.z);scene.add(p.g);JS.walker=p;}follow(JS.walker.g,11,dt,.8)}});
+{const _c=clearBits;clearBits=function(){if(JS.walker)scene.remove(JS.walker.g);return _c()}}
+// where the marker points, and what the ledger says
+{const _t=jobTarget;jobTarget=function(){const J=FP.job;if(!J)return _t();
+  if(J.type==='thief'){if(J.stage===0)return{x:J.rx,z:J.rz,n:`the rancho of ${J.who}`};if(J.stage===1)return{x:J.cx,z:J.cz,n:'the thief’s camp'};const T=townById(J.from);return{x:T.b.x,z:T.b.z,n:T.name}}
+  if(J.type==='effects'){if(J.stage===0)return{x:J.x,z:J.z,n:`the grave of ${J.who}`};const T=townById(J.to);return{x:T.b.x,z:T.b.z,n:T.name}}return _t()}}
+{const _l=jobLine;jobLine=function(){const J=FP.job;if(!J||(J.type!=='thief'&&J.type!=='effects'))return _l();const T=jobTarget(),d=Math.round(Math.hypot(T.x-S.kid.x,T.z-S.kid.z));
+  const s=J.type==='thief'?(J.stage===0?`Ask at the rancho of ${J.who}`:J.stage===1?'Find the thief’s camp':`Bring the mare to ${townById(J.from).name}${J.prisoner?', and the thief':''}`)
+    :(J.stage===0?`Find the grave of ${J.who}`:`Take his effects to his widow in ${townById(J.to).name}`);
+  return`<div class="fl job">⟡ ${s} · ${d} yds</div>`}}
+{const _due=jobDue;jobDue=function(T){const J=FP.job;if(J&&J.type==='thief')return J.stage===2&&J.from===T.id&&JS.mare&&Math.hypot(JS.mare.g.position.x-T.b.x,JS.mare.g.position.z-T.b.z)<40;
+  if(J&&J.type==='effects')return J.stage===1&&J.to===T.id;return _due(T)}}
+{const _pj=payJob;payJob=async function(T){const J=FP.job;if(!J||(J.type!=='thief'&&J.type!=='effects'))return _pj(T);clearBits();
+  const pay=J.type==='thief'?J.pay+(J.prisoner?6:0):J.pay;
+  const line=J.type==='thief'?(J.prisoner?`The alcalde's men take the thief off to the jail, and a rider goes out to ${J.who} with word of the mare. The reward is paid in silver.`:`A rider goes out to ${J.who} with word, and comes back with the reward and the ranchero's thanks.`)
+    :`She is a long time looking at the watch. She thanks you, and presses the money into your hand, and will not take it back.`;
+  await ask(NP['tk_'+T.id]||'',line+` $${pay}.`,['Take it']);FP.money+=pay;FP.jobsDone=(FP.jobsDone||0)+1;SND.coin&&SND.coin();FP.job=null;renderFree();saveFree()}}
+// the stages themselves
+async function atRancho(J){if(J.stage!==0)return;await ask('',`${J.who} comes out to meet you. The mare is a dun with one white foot, taken from the corral two nights ago. The thief rode ${'north,south,east,west'.split(',')[(Math.random()*4)|0]} along the dry wash, one man alone, and he will not have gone far with a led horse.`,['Go on'],{name:J.who});
+  J.stage=1;JS.ranch=null;say('The marker on your map moves to where the thief is camped.',5000);renderFree();saveFree()}
+async function atCamp(J){if(J.stage!==1)return;const r=await ask('','A thin man at a small fire, the dun mare picketed behind him. He sees you, and he sees your gun, and he keeps his hands where you can see them. He says he was going to sell her in Chihuahua and does not pretend otherwise.',
+    ['Take the mare and send him on his way','Take the mare, and take him in to the alcalde','Leave him the mare'],{name:'The horse thief'});
+  if(r===2){say('You ride on. Whatever he does with the mare, he does without you.',5000);dropJob();return}
+  J.stage=2;J.prisoner=r===1;if(JS.thief&&r===0){JS.thief.g.visible=false}if(JS.thief&&r===1){JS.thief.g.visible=false}
+  say(r===1?'You tie his hands and put him on foot ahead of the mare. He walks without a word.':'He goes off on foot into the brush. You lead the mare back.',6000);renderFree();saveFree()}
+async function atGrave(J){if(J.stage!==0)return;await ask('',`A cairn and a cross, the name burned into the wood: ${J.who.toUpperCase()}. Wedged among the stones is a tin box: a letter, a watch, and a likeness of a woman.`,['Take them'],{name:'A grave'});
+  J.stage=1;if(JS.G){scene.remove(JS.G);JS.G=null}say(`The marker moves to ${townById(J.to).name}.`,5000);renderFree();saveFree()}
+{const _a=FREE.acts;FREE.acts=function(){const L=_a.call(this);if(!FP.on)return L;const J=FP.job,k=S.kid;if(!J)return L;
+  if(J.type==='thief'&&J.stage===0&&Math.hypot(J.rx-k.x,J.rz-k.z)<12)L.unshift(here({x:J.rx,z:J.rz+9},12,`Talk to ${J.who}`,()=>atRancho(J)));
+  if(J.type==='thief'&&J.stage===1&&Math.hypot(J.cx-k.x,J.cz-k.z)<12)L.unshift(here({x:J.cx,z:J.cz},12,'Face the horse thief',()=>atCamp(J)));
+  if(J.type==='effects'&&J.stage===0&&Math.hypot(J.x-k.x,J.z-k.z)<8)L.unshift(here({x:J.x,z:J.z},8,'Look at the grave',()=>atGrave(J)));return L}}
+
+/* ---- riders keep out of the sea: a goal or a heading that lies past the shore is moved back onto the sand, and a rider who has
+   got his horse's feet wet is turned back to the beach (November 2026) ---- */
+HOOKS.push(()=>{if(typeof FP==='undefined'||!FP.men)return;const wet=(x,z)=>seaK(x,z)>0;
+  for(const m of FP.men){if(m.state==='dead')continue;
+    if(m.tx!=null&&wet(m.tx,m.tz))m.tz=shoreZ(m.tx)-18;
+    if(m.gx!=null&&wet(m.gx,m.gz)){m.gz=shoreZ(m.gx)-30}
+    if(wet(m.x,m.z)){m.z=Math.min(m.z,shoreZ(m.x)-1);if(m.tx==null||wet(m.tx,m.tz)){m.tx=m.x;m.tz=shoreZ(m.x)-20}}}});
+window.__step2={TRADE,JS,spawnMen:()=>spawnMen(),seaK:(x,z)=>seaK(x,z),shoreZ:x=>shoreZ(x),get cur(){return CUR},get FP(){return FP},JOBS,jobTarget:()=>jobTarget(),jobLine:()=>jobLine(),acts:()=>FREE.acts().map(x=>x.label),saveFree:()=>saveFree(),dropJob:()=>dropJob()};
+return{}})();
+
 
 
 /* ---------- wind, on trial in free play: the brush, the mesquite, the cottonwoods and the reeds bend as hard as the weather
