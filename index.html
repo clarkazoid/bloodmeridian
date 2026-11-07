@@ -458,15 +458,27 @@ function saguaroGeo(sd){const r=rngOf(sd),L=[];const H=8+r()*5;const col0=0x5e74
 function yuccaGeo(sd){const r=rngOf(sd),L=[];const h=1.8+r()*2.6;L.push({g:limb(0,0,0,(r()-.5)*.4,h,(r()-.5)*.4,.28,.22,6),c:0x6a5a46});L.push({g:limb(0,h*.35,0,0,h*.92,0,.55,.42,7),c:0x9a8a64});
   for(let i=0;i<18;i++){const a=r()*6.28,t=r()*1.5,l=1.2+r()*.6;L.push({g:limb(0,h,0,Math.sin(t)*Math.cos(a)*l,h+Math.cos(t)*l,Math.sin(t)*Math.sin(a)*l,.07,.01,3),c:r()<.5?0x7e8e58:0x6e7e4c})}
   if(r()<.6){L.push({g:limb(0,h+.8,0,0,h+3.8,0,.06,.04,3),c:0x7a7448});for(let i=0;i<7;i++)L.push({g:blob((r()-.5)*.5,h+2.4+i*.22,(r()-.5)*.5,.17,1.2,0,'o'),c:0xf0e6c8})}return partsGeo(L)}
+
+// a crown painted in clumps: the shade of each clump follows how high it sits in the crown and how far it leans to the light
+function crownParts(L,r,cx,cy,cz,rad,ht,P,n,kind='d'){
+  const SUN=[.55,.62,-.55];
+  for(let i=0;i<n;i++){const a=r()*6.28,d=Math.sqrt(r())*rad,x=cx+Math.cos(a)*d,z=cz+Math.sin(a)*d,yy=cy+(r()-.35)*ht,R=rad*(.24+r()*.16);
+    const up=(yy-cy)/ht+.35,side=(Math.cos(a)*SUN[0]+Math.sin(a)*SUN[2])*(d/rad),lit=up*.45+side*.45+(r()-.5)*.75;
+    const k=lit>.62?3:lit>.3?2:lit>-.05?1:0;L.push({g:blob(x,yy,z,R,.8,0,kind),c:P[k]})}
+  // pale flecks on the lit side, and a few loose clumps beyond the outline
+  for(let i=0;i<Math.max(2,n/5|0);i++){const a=Math.atan2(SUN[2],SUN[0])+(r()-.5)*1.6,d=rad*(.75+r()*.3);L.push({g:blob(cx+Math.cos(a)*d,cy+ht*(.25+r()*.45),cz+Math.sin(a)*d,rad*.11,1,0,'o'),c:P[4]})}
+  for(let i=0;i<Math.max(2,n/6|0);i++){const a=r()*6.28,d=rad*(1.05+r()*.25);L.push({g:blob(cx+Math.cos(a)*d,cy+(r()-.2)*ht*.8,cz+Math.sin(a)*d,rad*(.12+r()*.08),.8,0,kind),c:P[1+((r()*2)|0)]})}}
+const LEAF={cotton:[0x34584a,0x4e7a48,0x7aa04a,0xb2cc62,0xf0f4c0],mesq:[0x3e5038,0x5a6c3c,0x7e8e48,0xa8b064,0xe0e2b0],
+  willow:[0x40604a,0x5e8448,0x8aae52,0xbcd070,0xeef2c0],juniper:[0x24382e,0x324a36,0x46603e,0x5e784a,0xa8b888]};
 function mesquiteGeo(sd){const r=rngOf(sd),L=[];const n=3+((r()*2)|0);for(let i=0;i<n;i++){const a=r()*6.28,l=2.2+r()*1.4,ex=Math.cos(a)*l,ez=Math.sin(a)*l,ey=2.2+r()*1.2;
     L.push({g:limb(0,0,0,ex*.5,ey*.7,ez*.5,.24,.16,5),c:0x4e3e30},{g:limb(ex*.5,ey*.7,ez*.5,ex,ey,ez,.16,.08,4),c:0x55453a});
-    for(let j=0;j<3;j++)L.push({g:blob(ex+(r()-.5)*2.4,ey+.4+r()*.6,ez+(r()-.5)*2.4,1+r()*.5,.45,0,'o'),c:r()<.5?0x6e7a40:0x84904c})}return partsGeo(L)}
-function juniperGeo(sd){const r=rngOf(sd),L=[];const h=1.4+r()*1;L.push({g:limb(0,0,0,0,h,0,.3,.2,5),c:0x5a4636});for(let i=0;i<7;i++){const a=r()*6.28,d=r()*1.2;L.push({g:blob(Math.cos(a)*d,h+.6+r()*2.2,Math.sin(a)*d,1.1+r()*.6,1.1,0,'d'),c:r()<.5?0x3e5236:0x4c603e})}return partsGeo(L)}
+    }{let cx=0,cz=0;crownParts(L,r,0,3.1,0,3.2,1.3,LEAF.mesq,24,'o')}return partsGeo(L)}
+function juniperGeo(sd){const r=rngOf(sd),L=[];const h=1.4+r()*1;L.push({g:limb(0,0,0,0,h,0,.3,.2,5),c:0x5a4636});crownParts(L,r,0,h+1.6,0,1.5,2.4,LEAF.juniper,16,'d');return partsGeo(L)}
 function cottonwoodGeo(sd){const r=rngOf(sd),L=[];const h=3.4+r()*1.2;L.push({g:limb(0,0,0,0,h,0,.62,.46,7),c:0x8a8070});const n=2+((r()*2)|0);const tips=[];
   for(let i=0;i<n;i++){const a=i/n*6.28+r()*.8,l=3+r()*1.6,ex=Math.cos(a)*l*.7,ez=Math.sin(a)*l*.7,ey=h+l*.8;L.push({g:limb(0,h-.3,0,ex,ey,ez,.36,.2,5),c:0x8a8070});tips.push([ex,ey,ez])}
-  tips.push([0,h+3.6,0]);for(const [x,y,z] of tips)for(let j=0;j<3;j++){const R=1.5+r()*1.1;L.push({g:blob(x+(r()-.5)*2.6,y+.6+r()*1.4,z+(r()-.5)*2.6,R,.78,0,'d'),c:y+.6>h+4.5?(r()<.5?0x9aa44a:0x8a9a42):(r()<.5?0x76863a:0x6a7a36)})}return partsGeo(L)}
+  tips.push([0,h+3.6,0]);for(const [x,y,z] of tips)crownParts(L,r,x*.9,y+1.1,z*.9,2.6,2.4,LEAF.cotton,17,'d');return partsGeo(L)}
 function willowGeo(sd){const r=rngOf(sd),L=[];const n=6+((r()*5)|0);for(let i=0;i<n;i++){const a=r()*6.28,t=.08+r()*.3,l=4+r()*3,ex=Math.sin(t)*Math.cos(a)*l,ez=Math.sin(t)*Math.sin(a)*l,ey=Math.cos(t)*l;
-    L.push({g:limb(Math.cos(a)*.3,0,Math.sin(a)*.3,ex,ey,ez,.11,.05,3),c:0x7a5a3e});for(let j=0;j<2;j++){const k=.6+j*.3;L.push({g:blob(ex*k,ey*k+.4,ez*k,.55+r()*.25,2.1,0,'o'),c:r()<.5?0x8a9a4a:0x9aa858})}}return partsGeo(L)}
+    L.push({g:limb(Math.cos(a)*.3,0,Math.sin(a)*.3,ex,ey,ez,.11,.05,3),c:0x7a5a3e});for(let j=0;j<3;j++){const k=.5+j*.22;L.push({g:blob(ex*k,ey*k+.4,ez*k,.5+r()*.25,2.1,0,'o'),c:LEAF.willow[Math.min(3,j+((r()*2)|0))]})}if(r()<.5)L.push({g:blob(ex*.95,ey*.95+.6,ez*.95,.16,1,0,'o'),c:LEAF.willow[4]})}return partsGeo(L)}
 function floraMat(sway){const m=sway?swayMat(sway):new THREE.MeshPhongMaterial({color:0xffffff,shininess:4,specular:col(0x0c0c0c)});m.vertexColors=true;if(sway)m.customProgramCacheKey=()=>'fsway'+sway;return m}
 function plant(geoFn,seeds,list,colorOf,sway,scaleOf,shadow=true){const per=seeds.map(()=>[]);list.forEach((p,i)=>per[i%seeds.length].push(p));const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(0,0,0,'YXZ'),v=new THREE.Vector3(),sc=new THREE.Vector3();
   per.forEach((L,i)=>{if(!L.length)return;const geo=geoFn(seeds[i]);chunkInst(geo,floraMat(sway),L,(p,j,im,cx,cz)=>{e.set(p.tx||0,p.r||0,p.tz||0);q.setFromEuler(e);v.set(p.x-cx,groundH(p.x,p.z)-.15,p.z-cz);const k=scaleOf(p);sc.set(k,k,k);m4.compose(v,q,sc);im.setMatrixAt(j,m4);im.setColorAt(j,colorOf(p))},shadow)})}
@@ -4173,7 +4185,11 @@ const LG=new THREE.Group();scene.add(LG);
 function rockMat(){return 0x9a6a4e}
 function buildLandmark(L){const G=new THREE.Group();G.position.set(L.x,gy(L.x,L.z),L.z);LG.add(G);const R=rockMat();
   if(L.id==='cotton'){live(C_(1.2,1.8,9,7),0x4a3a2c,0,4.5,0,G);for(const [a,l] of [[.6,6],[-.7,7],[2.4,6],[-2.2,5.5]]){const b=live(C_(.5,.8,l,5),0x4a3a2c,Math.sin(a)*l*.35,8.5,Math.cos(a)*l*.35,G);b.rotation.set(Math.cos(a)*.7,0,-Math.sin(a)*.7)}
-    for(let k=0;k<11;k++){const a=k/11*6.283,r=k%3?6:3;live(new THREE.DodecahedronGeometry(3.4-k%2,0),k%2?0x6a7a3a:0x7a8a44,Math.cos(a)*r,12+Math.sin(k*1.7)*1.5,Math.sin(a)*r*.8,G)}}
+    {let sd=7;const r=()=>{sd=(sd*16807)%2147483647;return (sd-1)/2147483646};const P=[0x34584a,0x4e7a48,0x7aa04a,0xb2cc62,0xf0f4c0];
+      for(let k=0;k<56;k++){const a=r()*6.28,d=Math.sqrt(r())*7,x=Math.cos(a)*d,z=Math.sin(a)*d*.85,y=12+(r()-.35)*6,up=(y-12)/6+.35,side=(Math.cos(a)*.55-Math.sin(a)*.55)*(d/7),lit=up*.45+side*.45+(r()-.5)*.75;
+        live(new THREE.DodecahedronGeometry(1.1+r()*1.0,0),P[lit>.62?3:lit>.3?2:lit>-.05?1:0],x,y,z,G)}
+      for(let k=0;k<7;k++){const a=-.78+(r()-.5)*1.6,d=6+r()*1.8;live(new THREE.OctahedronGeometry(.45,0),P[4],Math.cos(a)*d,13.5+r()*2.5,Math.sin(a)*d,G)}
+      for(let k=0;k<6;k++){const a=r()*6.28,d=7.6+r()*1.6;live(new THREE.DodecahedronGeometry(.6+r()*.4,0),P[1+((r()*2)|0)],Math.cos(a)*d,11+r()*4,Math.sin(a)*d*.85,G)}}}
   else if(L.id==='arch'){for(const sx of [-1,1])for(let k=0;k<4;k++)live(new THREE.DodecahedronGeometry(3-k*.3,0),k%2?R:0xa87858,sx*6+Math.sin(k)*.6,1.8+k*3,Math.cos(k)*.5,G);
     for(let k=-2;k<=2;k++)live(new THREE.DodecahedronGeometry(2.4,0),k%2?R:0xa87858,k*2.6,13.2-Math.abs(k)*.5,0,G)}
   else if(L.id==='skulls'){G.scale.setScalar(1.7);for(let k=0;k<9;k++)live(new THREE.DodecahedronGeometry(1.5-k*.1,0),0x8a8070,Math.cos(k*2.4)*(2.2-k*.2),.8+k*.55,Math.sin(k*2.4)*(2.2-k*.2),G);
