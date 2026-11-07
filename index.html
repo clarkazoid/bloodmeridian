@@ -1068,6 +1068,12 @@ addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});addEventListener(
 canvas.addEventListener('pointerdown',e=>{au();canvas.setPointerCapture(e.pointerId);touch={id:e.pointerId,x:e.clientX,y:e.clientY,dx:0,dy:0}});
 canvas.addEventListener('pointermove',e=>{if(touch&&touch.id===e.pointerId){touch.dx=clamp((e.clientX-touch.x)/50,-1,1);touch.dy=clamp((e.clientY-touch.y)/50,-1,1)}});
 const endT=e=>{if(touch&&touch.id===e.pointerId){if(Math.hypot(touch.dx,touch.dy)<.1)doAct();touch=null}};canvas.addEventListener('pointerup',endT);canvas.addEventListener('pointercancel',endT);
+// coming back to the game: whatever was held when it lost focus is let go. A drag on the screen that lost its pointer, keys
+// whose release never arrived, and the run toggle all reset, so the pad is in charge again (November 2026)
+{const letGo=()=>{touch=null;for(const k in keys)keys[k]=false;S.run=false};
+  canvas.addEventListener('lostpointercapture',e=>{if(touch&&touch.id===e.pointerId)touch=null});
+  addEventListener('blur',letGo);addEventListener('focus',letGo);document.addEventListener('visibilitychange',letGo);
+  addEventListener('pointerup',e=>{if(touch&&touch.id===e.pointerId)touch=null});}
 canvas.addEventListener('wheel',e=>{e.preventDefault();VIEW=clamp(VIEW*(e.deltaY>0?1.1:.9),70,320)},{passive:false});
 const padPrev=[];let padNav=false,PADMODE=true;document.body.classList.add('pad');addEventListener('gamepadconnected',()=>{PADMODE=true;document.body.classList.add('pad')});
 const GX={A:'<i class="pb pa">A</i>',B:'<i class="pb pbb">B</i>',X:'<i class="pb px">X</i>',Y:'<i class="pb py">Y</i>',RT:'<i class="pb pt">RT</i>',LB:'<i class="pb pt">LB</i>',RB:'<i class="pb pt">RB</i>',LS:'<i class="pb pt">L3</i>',VW:'<i class="pb pt">View</i>',LT:'<i class="pb pt">LT</i>',RS:'<i class="pb pt">R stick</i>'};
@@ -1121,7 +1127,7 @@ async function doAct(){const a=current();if(!a)return;S.cut++;try{await a.fn()}f
 
 /* ---------- the kid moves ---------- */
 function blocked(x,z,m=1.1){for(const b of XB)if(x>b.x0-m&&x<b.x1+m&&z>b.z0-m&&z<b.z1+m)return true;return false}
-function stepKid(dt,pad){const k=S.kid;let ix=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),iz=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(pad&&(pad.x||pad.y)){ix=pad.x;iz=pad.y}if(touch){ix=touch.dx;iz=touch.dy}
+function stepKid(dt,pad){const k=S.kid;let ix=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),iz=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(touch){ix=touch.dx;iz=touch.dy}if(pad&&(pad.x||pad.y)){ix=pad.x;iz=pad.y;touch=null}
   const free=S.phase==='play'&&!S.cut&&bookEl.hidden&&titleEl.hidden&&fadeT<.5&&S.kidPose!=='roll'&&S.kidPose!=='down';if(!free){ix=iz=0}
   const mag=Math.min(1,Math.hypot(ix,iz));const rd=riverD(k.x,k.z),wet=(rd.r&&rd.d<rd.r.w+1)||seaK(k.x,k.z)>.02;
   const running=!S.mounted&&!S.strafe&&(keys.shift||S.run);
