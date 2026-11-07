@@ -376,7 +376,7 @@ const SURF=[];for(let i=0;i<40;i++){const m=new THREE.Mesh(B_(14,.15,1.2),basic(
 // what grows and lies on it
 seed=11;const PLANT={creosote:[],cholla:[],rock:[],bone:[],ocotillo:[]};
 const cleared=(x,z)=>{for(const [p,r] of CLEAR)if(Math.hypot(x-p.x,z-p.z)<r)return true;const rd=riverD(x,z);if(rd.r&&rd.d<rd.r.w+2)return true;return seaK(x,z)>0||(x<seaXL(z)+40&&z>shoreZ(x)-10)};
-for(let i=0;i<11600;i++){const x=rnd()*3300-80,z=(rnd()-.5)*(ZW*2-20);const zn=zone(x,z);if(Math.abs(z-TRAILZ(x))<7||cleared(x,z))continue;let k;const r=rnd();
+for(let i=0;i<11600;i++){const x=rnd()*3300-80,z=(rnd()-.5)*(ZW*2-20);const zn=zone(x,z);if(Math.abs(z-TRAILZ(x))<7||cleared(x,z))continue;{const cl=Math.sin(x*.019+Math.sin(z*.03)*2)*Math.cos(z*.023-x*.007);if(cl<0&&rnd()<.8)continue;if(rnd()<.2)continue}let k;const r=rnd();
   if(zn==='alkali')k=r<.4?'bone':r<.5?'rock':null;else if(zn==='malpais')k=r<.6?'rock':r<.7?'bone':null;else if(zn==='rock')k=r<.6?'rock':r<.8?'creosote':null;else k=r<.6?'creosote':r<.72?'cholla':r<.78?'ocotillo':r<.9?'rock':'bone';
   if(k)PLANT[k].push({x,z,s:rnd(),r:rnd()*6.28})}
 // willows along the rivers
@@ -4153,6 +4153,128 @@ function vox(m,key,vol=1,force){if(!m||!AU.c||!FP.on)return false;const now=perf
 {const _k=killMan;killMan=function(m){const was=m.state;_k(m);if(was!=='dead'){m.voxT=0;vox(m,'deathv',1,true)}}}
 
 /* the tilt-shift focus was taken out at the player's wish (November 2026) */
+/* ---------- step 1 of the ways forward (November 2026): small scenes on the road, landmarks to steer by, and news in the towns.
+   Nothing here is graphic: the dead are a grave, a horse, a burned wagon; there are no children in any of it ---------- */
+const ROAD=(()=>{
+const DIRS=['north','north-east','east','south-east','south','south-west','west','north-west'];
+const bearing=(fx,fz,tx,tz)=>{const a=Math.atan2(tx-fx,-(tz-fz));return DIRS[((Math.round(a/(Math.PI/4))%8)+8)%8]};
+const lg=d=>Math.max(1,Math.round(d/12.5));
+const farWords=d=>{const L=lg(d);return L<=3?'a short ride':L<=10?`some ${L} leagues`:L<=30?`a day's ride, ${L} leagues or so`:`${L} leagues and more`};
+const cap=t=>t[0].toUpperCase()+t.slice(1);
+const inTown=(x,z)=>TOWNS.some(T=>Math.hypot(x-T.c.x,z-T.c.z)<(T.r||50)+40);
+const okAt=(x,z)=>okGround(x,z)&&!inTown(x,z)&&!HOUSES.some(h=>Math.abs(x-h.x)<h.w/2+8&&Math.abs(z-h.z)<h.d/2+8);
+
+/* ---- landmarks: one of each, set in the long empty stretches, near enough the trail to be found ---- */
+const LMK=[{id:'cotton',n:'the lone cottonwood',x:1010},{id:'arch',n:'the stone arch',x:1240},{id:'skulls',n:'the cairn of ox skulls',x:1660},
+  {id:'cross',n:'the Padres’ cross',x:1910},{id:'painted',n:'the painted rock',x:2180},{id:'stage',n:'the wreck of the stage',x:760},{id:'needles',n:'the needles',x:2480}];
+let SEENL={};try{SEENL=JSON.parse(localStorage.getItem('meridian-landmarks-v1')||'{}')}catch(e){}
+const saveL=()=>{try{localStorage.setItem('meridian-landmarks-v1',JSON.stringify(SEENL))}catch(e){}};
+const LG=new THREE.Group();scene.add(LG);
+function rockMat(){return 0x9a6a4e}
+function buildLandmark(L){const G=new THREE.Group();G.position.set(L.x,gy(L.x,L.z),L.z);LG.add(G);const R=rockMat();
+  if(L.id==='cotton'){live(C_(1.2,1.8,9,7),0x4a3a2c,0,4.5,0,G);for(const [a,l] of [[.6,6],[-.7,7],[2.4,6],[-2.2,5.5]]){const b=live(C_(.5,.8,l,5),0x4a3a2c,Math.sin(a)*l*.35,8.5,Math.cos(a)*l*.35,G);b.rotation.set(Math.cos(a)*.7,0,-Math.sin(a)*.7)}
+    for(let k=0;k<11;k++){const a=k/11*6.283,r=k%3?6:3;live(new THREE.DodecahedronGeometry(3.4-k%2,0),k%2?0x6a7a3a:0x7a8a44,Math.cos(a)*r,12+Math.sin(k*1.7)*1.5,Math.sin(a)*r*.8,G)}}
+  else if(L.id==='arch'){for(const sx of [-1,1])for(let k=0;k<4;k++)live(new THREE.DodecahedronGeometry(3-k*.3,0),k%2?R:0xa87858,sx*6+Math.sin(k)*.6,1.8+k*3,Math.cos(k)*.5,G);
+    for(let k=-2;k<=2;k++)live(new THREE.DodecahedronGeometry(2.4,0),k%2?R:0xa87858,k*2.6,13.2-Math.abs(k)*.5,0,G)}
+  else if(L.id==='skulls'){G.scale.setScalar(1.7);for(let k=0;k<9;k++)live(new THREE.DodecahedronGeometry(1.5-k*.1,0),0x8a8070,Math.cos(k*2.4)*(2.2-k*.2),.8+k*.55,Math.sin(k*2.4)*(2.2-k*.2),G);
+    for(let k=0;k<4;k++){const a=k/4*6.283+.4,x=Math.cos(a)*1.6,z=Math.sin(a)*1.6,y=k===0?5.9:4.2;live(B_(1,.8,1.4),0xe8e0cc,x,y,z,G).rotation.y=a;const hz=new THREE.Mesh(C_(.12,.05,2.6,4),mat(0xd8ccb0));hz.position.set(x,y+.3,z);hz.rotation.set(0,a,Math.PI/2);G.add(hz)}}
+  else if(L.id==='cross'){for(let k=0;k<6;k++)live(new THREE.DodecahedronGeometry(1.8,0),0x8a7a68,Math.cos(k)*1.8,.9,Math.sin(k)*1.8,G);live(B_(.9,11,.9),0x5a3a24,0,6.5,0,G);live(B_(6,.9,.9),0x5a3a24,0,9.6,0,G);
+    for(const y of [3,6.2,9.6])live(B_(1,.2,1),0x3a3436,0,y,0,G)}
+  else if(L.id==='painted'){const b=live(new THREE.DodecahedronGeometry(6,1),0xb08060,0,4,0,G);b.scale.set(1.4,.9,1);
+    const cv=document.createElement('canvas');cv.width=64;cv.height=32;const g=cv.getContext('2d');g.fillStyle='#b08060';g.fillRect(0,0,64,32);g.fillStyle='#9a3a24';
+    for(const [x,y] of [[8,8],[16,14],[50,10],[44,20]]){g.fillRect(x,y,4,5);for(let f=0;f<4;f++)g.fillRect(x+f,y-3+(f%2),1,3)}g.fillStyle='#efe6d2';g.fillRect(28,6,2,10);g.fillRect(25,9,8,2);g.fillRect(27,16,1,5);g.fillRect(30,16,1,5);g.fillRect(36,22,10,2);g.fillRect(38,19,2,3);
+    const t=new THREE.CanvasTexture(cv);t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;const pl=new THREE.Mesh(new THREE.PlaneGeometry(11,5.5),new THREE.MeshLambertMaterial({map:t,transparent:false}));pl.position.set(0,4.4,5.8);pl.rotation.x=-.2;G.add(pl)}
+  else if(L.id==='stage'){const S=new THREE.Group();S.rotation.z=1.25;S.position.y=1.6;G.add(S);live(B_(4.4,4,8),0x6a2a22,0,0,0,S);live(B_(4.8,.3,8.6),0x2a2018,0,2.1,0,S);
+    for(const [x,z] of [[-2.4,-3],[-2.4,3],[2.4,-3],[2.4,3]]){const w=new THREE.Mesh(new THREE.TorusGeometry(1.4,.18,4,12),mat(0x4a3424));w.position.set(x,-2.2,z);w.rotation.y=Math.PI/2;S.add(w)}
+    for(let k=0;k<5;k++)live(B_(rr(3,6),.8,rr(2,3)),0xd8b888,rr(-4,4),.2,rr(-5,5),G)}
+  else if(L.id==='needles'){for(let k=0;k<6;k++){const h=8+((k*37)%9);const s=live(new THREE.CylinderGeometry(.6,2.2,h,5),k%2?R:0x8a5a40,Math.cos(k*1.9)*4,h/2,Math.sin(k*1.9)*3,G);s.rotation.z=(k%3-1)*.06}}
+  G.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}})}
+for(const L of LMK){let best=null;for(let t=0;t<40&&!best;t++){const side=t%2?1:-1,x=L.x+(t>>1)*7*(t%4<2?1:-1),z=TRAILZ(x)+side*(28+(t%5)*4);if(okAt(x,z))best={x,z}}
+  if(best){L.x=best.x;L.z=best.z;buildLandmark(L)}else L.skip=true}
+
+/* ---- events on the road: one at a time, ahead of the kid, every few minutes of riding out of town ---- */
+const EPITAPHS=[['J. W. TOBIN','OF TENNESSEE','1848'],['A STRANGER','FOUND BY THE ROAD','GOD KNOWS HIM'],['EZRA MOORE','TEAMSTER','AGED 40 YRS'],['JUAN DE DIOS VARELA','DESCANSE EN PAZ','1847'],['T. H.','HE HAD NO HORSE','1849']];
+const KINDS=['wagon','grave','horse','traveller','spring','cart','camp','grave','traveller','wagon'];
+let EV=null,travel=0,px=null,pz=null,vx=0,vz=-1,count=0;
+const EG=new THREE.Group();scene.add(EG);
+function clearEv(){if(EV){EG.remove(EV.G);EV=null}}
+function mkEvent(kind,x,z){const G=new THREE.Group();G.position.set(x,gy(x,z),z);EG.add(G);const e={kind,x,z,G,done:false,at:{x,z},r:6,birds:[]};
+  if(kind==='wagon'){live(B_(4,1.6,7),0x2a1e18,0,1.4,0,G);for(let k=0;k<4;k++)live(B_(.3,rr(.8,2.2),.3),0x1a1410,rr(-1.8,1.8),2.6,rr(-3,3),G);
+    for(const [wx,wz,ry] of [[-2.3,-2.4,0],[2.6,2.2,.4]]){const w=new THREE.Mesh(new THREE.TorusGeometry(1.4,.18,4,12),mat(0x2a2018));w.position.set(wx,1.3,wz);w.rotation.y=Math.PI/2+ry;G.add(w)}
+    const w2=new THREE.Mesh(new THREE.TorusGeometry(1.4,.18,4,12),mat(0x2a2018));w2.position.set(4,.25,-1);w2.rotation.x=Math.PI/2;G.add(w2);live(C_(.55,.5,1.3,8),0x3a2a1e,-3.6,.65,3,G);live(B_(.3,.3,5),0x3a2a1e,0,.5,6,G)}
+  else if(kind==='grave'){for(let k=0;k<7;k++)live(new THREE.DodecahedronGeometry(.8,0),0x9a8a76,Math.cos(k)*1+rr(-.3,.3),.4,Math.sin(k)*1.6,G);live(B_(.25,2.6,.25),0x5a3a24,0,1.7,-2,G);live(B_(1.4,.25,.25),0x5a3a24,0,2.4,-2,G);e.epitaph=EPITAPHS[count%EPITAPHS.length]}
+  else if(kind==='horse'){deadHorse(G,0,0,0x5a4030);{const c=G.children[G.children.length-1];c.position.set(0,1.2,0)}e.birds=[0,1,2].map(i=>{const b=new THREE.Group();live(B_(.5,.25,.6),0x141010,0,0,0,b);for(const s of [-1,1])live(B_(1.4,.08,.4),0x141010,s*.9,.05,0,b);b.userData={r:6+i*2,ph:i*2.1,h:14+i*2};G.add(b);return b})}
+  else if(kind==='traveller'){const h=horse([0x6a4a30,0x8a6a48,0x3a2a1e][count%3],{});h.g.scale.setScalar(.82);h.g.position.set(-2.2,0,0);h.g.rotation.y=1.2;G.add(h.g);
+    const p=person({coat:[0x6a5a3a,0x3a4a5a,0x7a3a2a][count%3],trou:0x3e362e,hat:count%2?'sombrero':'wide',hatC:count%2?0xc8b080:0x3a3026,hair:0x3a2a1e,beard:count%2?null:0x5a4028,skin:0xb8906c});p.g.position.set(1,0,.5);p.g.rotation.y=-.6;p.g.scale.setScalar(.82);G.add(p.g);e.r=7}
+  else if(kind==='spring'){const w=new THREE.Mesh(new THREE.CircleGeometry(2.6,12),waterMat);w.rotation.x=-Math.PI/2;w.position.y=.12;G.add(w);
+    for(let k=0;k<16;k++){const a=k/16*6.283;live(B_(.12,rr(1.2,2.6),.12),k%2?0x6a8a3a:0x8a9a44,Math.cos(a)*rr(2.4,3.4),.8,Math.sin(a)*rr(2.4,3.4),G)}for(let k=0;k<5;k++)live(new THREE.DodecahedronGeometry(.9,0),0x8a7a68,Math.cos(k*1.3)*3.6,.4,Math.sin(k*1.3)*3.2,G)}
+  else if(kind==='cart'){const C=new THREE.Group();C.rotation.z=-.22;G.add(C);live(B_(3.4,1.2,5.6),0x7a5a3a,0,1.6,0,C);for(const s of [-1,1])live(B_(.2,1.2,5.6),0x5a3a24,s*1.7,2.6,0,C);
+    const w=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,.4,10),mat(0x6a4a2c));w.rotation.z=Math.PI/2;w.position.set(2.1,1.5,0);C.add(w);
+    const off=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,.4,10),mat(0x6a4a2c));off.position.set(4.4,.2,2);G.add(off);
+    const m=horse(0x5a4a3a,{mule:true,bare:true});m.g.scale.setScalar(.82);m.g.position.set(0,0,-6);G.add(m.g);
+    const p=person({coat:0xd8d0c0,trou:0xc8c0b0,hat:'sombrero',hatC:0xc8b080,hair:0x1a1410,skin:0xa87a58});p.g.position.set(4,0,3.6);p.g.rotation.y=2.6;p.g.scale.setScalar(.82);G.add(p.g);e.r=7}
+  else if(kind==='camp'){fireRing(G,0,0);G.children[G.children.length-1].position.set(0,0,0);for(let k=0;k<4;k++)live(B_(rr(1.4,2.2),.3,.3),0x2a1e18,rr(-.8,.8),.3,rr(-.8,.8),G).rotation.y=rr(0,3);live(B_(2.6,.3,1.2),0x6a5a3a,3,.15,1,G)}
+  G.traverse(o=>{if(o.isMesh){o.castShadow=true}});return e}
+function spawn(){const K=S.kid;const n=Math.hypot(vx,vz)||1,dx=vx/n,dz=vz/n;
+  for(let t=0;t<12;t++){const d=70+t*6,s=(t%2?1:-1)*(6+t*2),x=K.x+dx*d-dz*s,z=K.z+dz*d+dx*s;if(okAt(x,z)){EV=mkEvent(KINDS[count%KINDS.length],x,z);count++;return}}}
+HOOKS.push(dt=>{if(typeof FP==='undefined'||!FP.on||S.phase!=='play')return;const K=S.kid;
+  if(px!==null){const mx=K.x-px,mz=K.z-pz,m=Math.hypot(mx,mz);if(m>0&&m<20){if(!inTown(K.x,K.z))travel+=m;vx+=(mx-vx)*.08;vz+=(mz-vz)*.08}}px=K.x;pz=K.z;
+  if(EV){const d=Math.hypot(EV.x-K.x,EV.z-K.z);if(d>320)clearEv();else for(const b of EV.birds){const u=b.userData,a=performance.now()/1000*.5+u.ph;b.position.set(Math.cos(a)*u.r,u.h+Math.sin(a*2)*.6,Math.sin(a)*u.r);b.rotation.set(0,-a,.3)}}
+  else if(travel>420){travel=0;spawn()}
+  // a landmark seen for the first time goes on the map
+  for(const L of LMK){if(L.skip||SEENL[L.id])continue;if(Math.hypot(L.x-K.x,L.z-K.z)<45){SEENL[L.id]=1;saveL();say(`${L.n[0].toUpperCase()+L.n.slice(1)}. It goes on the map.`,5000)}}});
+
+/* ---- what the country says: true news, picked from what is out there now ---- */
+function rumour(fx,fz){const out=[];
+  for(const H of HIDEOUTS){if(H.cleared)continue;const c=H.p();const d=Math.hypot(c.x-fx,c.z-fz);if(d>800)continue;out.push(`Men hole up at ${H.name}, ${farWords(d)} to the ${bearing(fx,fz,c.x,c.z)}. They say there is money there, and that they keep a watch.`)}
+  for(const L of LMK){if(L.skip||SEENL[L.id])continue;const d=Math.hypot(L.x-fx,L.z-fz);if(d>700)continue;out.push(`Riders steer by ${L.n}, ${farWords(d)} to the ${bearing(fx,fz,L.x,L.z)}, close by the road.`)}
+  for(const W of [{n:'the well in the desert',p:P.WELL},{n:'the rock tanks at Hueco',p:P.TANKS}]){if(!W.p)continue;const d=Math.hypot(W.p.x-fx,W.p.z-fz);if(d>800)continue;out.push(`There is water at ${W.n}, ${farWords(d)} to the ${bearing(fx,fz,W.p.x,W.p.z)}. Fill everything you have before you go out past it.`)}
+  out.push('A caravan works the road between the towns, with silver in the cart and three guards on it. The guards are nervous of any man with a gun out.');
+  out.push('They say the dead get up at the old graveyard by the mission, for any man who breaks the stones there.');
+  if(!(window.__home&&__home.owned))out.push('The alcalde at Santa Rita has a piece of ground for sale, twenty dollars, with water from a spring.');
+  return out.length?out[(Math.random()*out.length)|0]:'Nothing new, he says. Only the heat.'}
+let NEWS={};// one piece of news per town per day
+async function hearNews(T){const day=Math.floor(S.t/24);const k=T.id+':'+day;
+  if(!NEWS[k]){const b=T.b||boardAt(T);NEWS[k]=rumour(b.x,b.z)}
+  await ask('',`The men loafing by the notice board talk while you read it. ${NEWS[k]}`,['Go on'],{name:'Talk at the board'})}
+
+/* ---- the actions, offered when the kid is close ---- */
+const loot=()=>{const r=Math.random();if(r<.3){FP.cart=(FP.cart||0)+8;return'a paper of Colt cartridges, eight of them'}if(r<.55){const m=1+((Math.random()*3)|0);FP.money+=m;return`$${m} in coin`}if(r<.75){FP.jerky=(FP.jerky||0)+2;return'two strips of jerked meat'}return null};
+async function act(e){if(e.kind==='wagon'){if(e.done){say('There is nothing more in it.',2500);return}e.done=true;const f=loot();say(f?`In the ashes under the bed you find ${f}.`:'Whoever burned it took what there was.',5000);renderFree();saveFree()}
+  else if(e.kind==='grave'){const [a,b,c]=e.epitaph;await ask('',`Stones heaped over a grave, and a cross of two boards. Burned into the crosspiece: ${a}. ${b}. ${c}.`,['Go on'],{name:'A grave by the road'})}
+  else if(e.kind==='horse'){if(e.done){say('The saddlebags are empty now.',2500);return}e.done=true;const f=loot();say(f?`The horse has been dead some days. In the saddlebags you find ${f}.`:'The horse has been dead some days. The saddlebags have been cut away.',5000);renderFree();saveFree()}
+  else if(e.kind==='traveller'){const opts=['Ask for news'];if((FP.cant||0)>0&&!e.done)opts.push('Give him a drink');opts.push('Ride on');
+    const r=await ask('',e.done?'The man nods to you. He is in no hurry to be anywhere.':'A man has got down to rest his horse. He watches your hands, then nods.',opts,{name:'A traveller'});
+    if(opts[r]==='Ask for news')await ask('',rumour(e.x,e.z),['Go on'],{name:'A traveller'});
+    else if(opts[r]==='Give him a drink'){FP.cant--;e.done=true;FP.jerky=(FP.jerky||0)+2;await ask('',`He drinks and wipes his mouth and gives you two strips of jerky for it. ${rumour(e.x,e.z)}`,['Go on'],{name:'A traveller'});renderFree();saveFree()}}
+  else if(e.kind==='spring'){S.water=1;FP.cant=CANMAX();if(window.__more&&__more.M&&__more.M.horse)__more.M.horse.water=1;say('A seep in the reeds, the water cold and tasting of iron. You drink, fill the canteen, and let the horse drink.',5000);renderFree();saveFree()}
+  else if(e.kind==='cart'){if(e.done){say('The carretero waves you on.',2500);return}
+    const r=await ask('','A carreta with a wheel off, and the carretero sitting by it. He cannot lift the bed alone.',['Help with the wheel','Ride on'],{name:'A broken cart'});
+    if(r===0){e.done=true;await fade(1,700);S.t+=1;await fade(0,700);FP.money+=2;await ask('',`It takes an hour. He pays you two dollars and tells you what he heard on the road. ${rumour(e.x,e.z)}`,['Go on'],{name:'The carretero'});renderFree();saveFree()}}
+  else if(e.kind==='camp'){say('A camp, the ashes still warm under the top. Two men, by the boot marks, gone on at first light.',5000)}}
+const LABEL={wagon:'Search the burned wagon',grave:'Read the cross',horse:'Look at the dead horse',traveller:'Talk to the traveller',spring:'Drink at the spring',cart:'Go to the broken cart',camp:'Look at the camp'};
+{const _a=FREE.acts;FREE.acts=function(){const L=_a.call(this);if(!FP.on)return L;const k=S.kid;
+  if(EV&&Math.hypot(EV.x-k.x,EV.z-k.z)<EV.r)L.unshift(here(EV.at,EV.r,LABEL[EV.kind],()=>act(EV)));
+  for(const T of TOWNS){const b=T.b||boardAt(T);if(b&&Math.hypot(b.x-k.x,b.z-k.z)<6)L.push(here(b,6,'Hear the news',()=>hearNews(T)))}
+  for(const Lm of LMK){if(!Lm.skip&&Math.hypot(Lm.x-k.x,Lm.z-k.z)<12)L.push(here({x:Lm.x,z:Lm.z},12,'Look at '+Lm.n,()=>say(LOOK[Lm.id],6000)))}
+  return L}}
+const LOOK={cotton:'A cottonwood, older than any town in the country, standing where there is no river now. Men have cut their names in the bark.',arch:'The wind has worn the rock through. You can see the far country framed in it.',
+  skulls:'Ox skulls set on a cairn by someone who wanted the road marked. They are white as chalk.',cross:'A cross set up by the padres, the iron bands on it rusted black. The base is heaped with small stones left by travellers.',
+  painted:'Hands painted on the rock in red ochre, and men and animals in white, older than the Spanish. No one in the towns knows who made them.',stage:'A coach turned over in the sand, the paint gone, the wheels in the air. The sand has half buried it.',
+  needles:'Spires of red rock, standing up out of the flats. Hawks nest on the tops.'};
+// the map: landmarks drawn in once seen
+{const _dm=drawMap;drawMap=function(){_dm.apply(this,arguments);try{const cv=mapEl.querySelector('canvas'),g=cv.getContext('2d'),U=cv.width/1500;
+  g.save();g.font=`italic ${Math.round(12*U)}px "IM Fell English", Georgia, serif`;g.fillStyle='rgba(50,32,20,.92)';g.strokeStyle='rgba(50,32,20,.92)';g.lineWidth=1.2*U;
+  for(const L of LMK){if(L.skip||!SEENL[L.id])continue;const [x,y]=mapXY(MAPG,L.x,L.z);g.beginPath();g.moveTo(x,y-5*U);g.lineTo(x+4*U,y+3*U);g.lineTo(x-4*U,y+3*U);g.closePath();g.stroke();g.fillText(L.n,x+6*U,y+4*U)}
+  g.restore()}catch(e){}}}
+
+/* ---- the kid's ledger scrolls with the pad (left or right stick, or the d-pad) and the arrow keys ---- */
+HOOKS.push(dt=>{const L=document.getElementById('kledger');if(!L||L.hidden)return;const gp=navigator.getGamepads&&[...navigator.getGamepads()].find(g=>g&&g.connected);if(!gp)return;
+  let v=(gp.axes[1]||0)+(gp.axes[3]||0);if(Math.abs(v)<.2)v=0;if(gp.buttons[12]&&gp.buttons[12].pressed)v=-1;if(gp.buttons[13]&&gp.buttons[13].pressed)v=1;if(v)L.scrollTop+=v*900*dt});
+addEventListener('keydown',e=>{const L=document.getElementById('kledger');if(!L||L.hidden)return;if(e.key==='ArrowDown'||e.key==='s'){e.preventDefault();L.scrollTop+=60}else if(e.key==='ArrowUp'||e.key==='w'){e.preventDefault();L.scrollTop-=60}},true);
+window.__road={get ev(){return EV},LMK,SEENL,spawn,rumour,mk:(k,x,z)=>{clearEv();EV=mkEvent(k,x,z);return EV}};
+return{}})();
+
 
 /* ---------- wind, on trial in free play: the brush, the mesquite, the cottonwoods and the reeds bend as hard as the weather
    blows (before this they moved the same in a dust storm as on a still morning), with gusts that come and go, and washing
